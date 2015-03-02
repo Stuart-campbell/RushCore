@@ -8,6 +8,7 @@ import java.util.Map;
 import co.uk.rushorm.core.AnnotationCache;
 import co.uk.rushorm.core.Rush;
 import co.uk.rushorm.core.RushColumns;
+import co.uk.rushorm.core.RushConfig;
 import co.uk.rushorm.core.RushConflict;
 import co.uk.rushorm.core.RushConflictSaveStatementGenerator;
 import co.uk.rushorm.core.RushDeleteStatementGenerator;
@@ -23,6 +24,9 @@ public class ConflictSaveStatementGenerator extends ReflectionSaveStatementGener
     private static final String SELECT_TEMPLATE = "SELECT * from %s" +
             "\nWHERE " + ReflectionUtils.RUSH_ID + "='%s';";
 
+    public ConflictSaveStatementGenerator(RushConfig rushConfig) {
+        super(rushConfig);
+    }
 
     @Override
     public void conflictsFromGenerateSaveOrUpdate(List<? extends Rush> objects, Map<Class, AnnotationCache> annotationCache, RushStringSanitizer rushStringSanitizer, RushColumns rushColumns, Callback saveCallback) {

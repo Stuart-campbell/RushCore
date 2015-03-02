@@ -6,6 +6,7 @@ import java.util.List;
 
 import co.uk.rushorm.core.Logger;
 import co.uk.rushorm.core.Rush;
+import co.uk.rushorm.core.RushConfig;
 import co.uk.rushorm.core.RushStatementRunner;
 import co.uk.rushorm.core.RushUpgradeManager;
 import co.uk.rushorm.core.annotations.RushIgnore;
@@ -48,9 +49,11 @@ public class ReflectionUpgradeManager implements RushUpgradeManager {
     }
 
     private static final String TEMP_PREFIX = "_temp";
-    private static final String COLUMNS_INFO = "PRAGMA table_info(%s)";
+    private static final String COLUMNS_INFO_SQLITE = "PRAGMA table_info(%s)";
+    private static final String COLUMNS_INFO_MYSQL = "DESCRIBE %s";
     private static final String RENAME_TABLE = "ALTER TABLE %s RENAME TO %s";
-    private static final String TABLE_INFO = "SELECT name FROM sqlite_master WHERE type='table';";
+    private static final String TABLE_INFO_SQLITE = "SELECT name FROM sqlite_master WHERE type='table';";
+    private static final String TABLE_INFO_MYSQL = "select TABLE_NAME from information_schema.tables where TABLE_SCHEMA='%s';";
     private static final String DROP = "DROP TABLE %s";
     private static final String MOVE_ROWS = "INSERT INTO %s(" + ReflectionUtils.RUSH_ID + "," + ReflectionUtils.RUSH_CREATED + "," + ReflectionUtils.RUSH_UPDATED + "," + ReflectionUtils.RUSH_VERSION + "%s)\n" +
             "SELECT " + ReflectionUtils.RUSH_ID + "," + ReflectionUtils.RUSH_CREATED + "," + ReflectionUtils.RUSH_UPDATED + "," + ReflectionUtils.RUSH_VERSION  + "%s\n" +
@@ -63,9 +66,11 @@ public class ReflectionUpgradeManager implements RushUpgradeManager {
     private static final String DELETE_INDEX = "DROP INDEX %s;";
 
     private final Logger logger;
-
-    public ReflectionUpgradeManager(Logger logger) {
+    private final RushConfig rushConfig;
+    
+    public ReflectionUpgradeManager(Logger logger, RushConfig rushConfig) {
         this.logger = logger;
+        this.rushConfig = rushConfig;
     }
     
     @Override
@@ -166,7 +171,13 @@ public class ReflectionUpgradeManager implements RushUpgradeManager {
     }
     
     private List<String> currentTables(UpgradeCallback callback) {
-        RushStatementRunner.ValuesCallback values = callback.runStatement(TABLE_INFO);
+        String sql;
+        if(rushConfig.usingMySql()) {
+            sql = String.format(TABLE_INFO_MYSQL, rushConfig.dbName());
+        }else {
+            sql = TABLE_INFO_SQLITE;
+        }
+        RushStatementRunner.ValuesCallback values = callback.runStatement(sql);
         List<String> tables = new ArrayList<>();
         while(values.hasNext()) {
             String table = values.next().get(0);
@@ -179,7 +190,7 @@ public class ReflectionUpgradeManager implements RushUpgradeManager {
     }
 
     private List<String> tablesFields(String table, UpgradeCallback callback) {
-        RushStatementRunner.ValuesCallback values = callback.runStatement(String.format(COLUMNS_INFO, table));
+        RushStatementRunner.ValuesCallback values = callback.runStatement(String.format(rushConfig.usingMySql() ? COLUMNS_INFO_MYSQL : COLUMNS_INFO_SQLITE, table));
         List<String> columns = new ArrayList<>();
         while(values.hasNext()) {
             List<String> columnsInfo = values.next();

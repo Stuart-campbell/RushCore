@@ -9,7 +9,7 @@ import co.uk.rushorm.core.RushStringSanitizer;
 public class RushColumnShort implements RushColumn<Short> {
     @Override
     public String sqlColumnType() {
-        return "short";
+        return "tinyint";
     }
 
     @Override

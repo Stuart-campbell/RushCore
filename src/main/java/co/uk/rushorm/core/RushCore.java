@@ -44,10 +44,10 @@ public class RushCore {
 
         RushColumns rushColumns = new RushColumnsImplementation(columns);
 
-        RushUpgradeManager rushUpgradeManager = new ReflectionUpgradeManager(logger);
+        RushUpgradeManager rushUpgradeManager = new ReflectionUpgradeManager(logger, rushConfig);
         Map<Class, AnnotationCache> annotationCache = new HashMap<>();
-        RushSaveStatementGenerator saveStatementGenerator = new ReflectionSaveStatementGenerator();
-        RushConflictSaveStatementGenerator conflictSaveStatementGenerator = new ConflictSaveStatementGenerator();
+        RushSaveStatementGenerator saveStatementGenerator = new ReflectionSaveStatementGenerator(rushConfig);
+        RushConflictSaveStatementGenerator conflictSaveStatementGenerator = new ConflictSaveStatementGenerator(rushConfig);
         RushDeleteStatementGenerator deleteStatementGenerator = new ReflectionDeleteStatementGenerator();
         RushTableStatementGenerator rushTableStatementGenerator = new ReflectionTableStatementGenerator();
         RushClassLoader rushClassLoader = new ReflectionClassLoader();
@@ -61,7 +61,7 @@ public class RushCore {
                                   RushDeleteStatementGenerator deleteStatementGenerator,
                                   RushClassFinder rushClassFinder,
                                   RushTableStatementGenerator rushTableStatementGenerator,
-                                  RushStatementRunner statementRunner,
+                                  final RushStatementRunner statementRunner,
                                   final RushQueProvider queProvider,
                                   final RushConfig rushConfig,
                                   RushClassLoader rushClassLoader,
@@ -75,17 +75,19 @@ public class RushCore {
         rushCore = new RushCore(saveStatementGenerator, rushConflictSaveStatementGenerator, deleteStatementGenerator, statementRunner, queProvider, rushConfig, rushTableStatementGenerator, rushClassLoader, rushStringSanitizer, logger, rushObjectSerializer, rushObjectDeserializer, rushColumns, annotationCache);
         rushCore.loadAnnotationCache(rushClassFinder);
 
+        final boolean isFirstRun = statementRunner.isFirstRun();
         final RushQue que = queProvider.blockForNextQue();
         new Thread(new Runnable() {
             @Override
             public void run() {
-                if (rushConfig.firstRun()) {
+                if (isFirstRun) {
                     rushCore.createTables(new ArrayList<>(rushCore.annotationCache.keySet()), que);
-                } else if(rushConfig.inDebug() || rushConfig.upgrade()){
+                } else if(rushConfig.inDebug() || statementRunner.requiresUpgrade(rushConfig.dbVersion(), que)){
                     rushCore.upgrade(new ArrayList<>(rushCore.annotationCache.keySet()), rushUpgradeManager, que);
                 } else {
                     queProvider.queComplete(que);
                 }
+                statementRunner.initializeComplete(rushConfig.dbVersion());
             }
         }).start();
     }

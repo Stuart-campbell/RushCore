@@ -9,6 +9,7 @@ import java.util.Map;
 import co.uk.rushorm.core.AnnotationCache;
 import co.uk.rushorm.core.Rush;
 import co.uk.rushorm.core.RushColumns;
+import co.uk.rushorm.core.RushConfig;
 import co.uk.rushorm.core.RushMetaData;
 import co.uk.rushorm.core.RushSaveStatementGenerator;
 import co.uk.rushorm.core.RushSaveStatementGeneratorCallback;
@@ -19,10 +20,14 @@ import co.uk.rushorm.core.RushStringSanitizer;
  */
 public class ReflectionSaveStatementGenerator implements RushSaveStatementGenerator {
 
-    private static final String MULTIPLE_INSERT_UPDATE_TEMPLATE = "INSERT OR REPLACE INTO %s " +
+    private static final String MULTIPLE_INSERT_UPDATE_TEMPLATE_MYSQL = "REPLACE INTO %s " +
             "(%s)\n" +
             "VALUES %s;";
 
+    private static final String MULTIPLE_INSERT_UPDATE_TEMPLATE_SQLITE = "INSERT OR REPLACE INTO %s " +
+            "(%s)\n" +
+            "VALUES %s;";
+    
     private static final String MULTIPLE_INSERT_JOIN_TEMPLATE = "INSERT INTO %s " +
             "(parent, child)\n" +
             "VALUES %s;";
@@ -57,6 +62,12 @@ public class ReflectionSaveStatementGenerator implements RushSaveStatementGenera
             joins.put(basicJoin.table, new ArrayList<BasicJoin>());
         }
         joins.get(basicJoin.table).add(basicJoin);
+    }
+
+    private final RushConfig rushConfig;
+    
+    public ReflectionSaveStatementGenerator(RushConfig rushConfig) {
+        this.rushConfig = rushConfig;
     }
 
     @Override
@@ -272,7 +283,7 @@ public class ReflectionSaveStatementGenerator implements RushSaveStatementGenera
 
                 @Override
                 public void doAction() {
-                    String sql = String.format(MULTIPLE_INSERT_UPDATE_TEMPLATE,
+                    String sql = String.format(rushConfig.usingMySql() ? MULTIPLE_INSERT_UPDATE_TEMPLATE_MYSQL : MULTIPLE_INSERT_UPDATE_TEMPLATE_SQLITE,
                             ReflectionUtils.tableNameForClass(entry.getKey()),
                             columns,
                             valuesString.toString());
