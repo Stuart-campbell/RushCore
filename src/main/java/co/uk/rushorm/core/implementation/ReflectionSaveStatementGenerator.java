@@ -86,7 +86,7 @@ public class ReflectionSaveStatementGenerator implements RushSaveStatementGenera
         }
 
         ReflectionUtils.deleteManyJoins(joinDeletes, saveCallback);
-        createOrUpdateObjects(updateValues, columns, saveCallback);
+        createOrUpdateObjects(updateValues, columns, annotationCache, saveCallback);
 
         createManyJoins(joinValues, saveCallback);
 
@@ -165,7 +165,7 @@ public class ReflectionSaveStatementGenerator implements RushSaveStatementGenera
     private String joinFromField(List<BasicJoin> joins, Rush rush, Field field, Map<Class, AnnotationCache> annotationCache) {
 
         if (Rush.class.isAssignableFrom(field.getType())) {
-            String tableName = ReflectionUtils.joinTableNameForClass(rush.getClass(), field.getType(), field);
+            String tableName = ReflectionUtils.joinTableNameForClass(rush.getClass(), field.getType(), field, annotationCache);
             try {
                 Rush child = (Rush) field.get(rush);
                 if (child != null) {
@@ -179,7 +179,7 @@ public class ReflectionSaveStatementGenerator implements RushSaveStatementGenera
 
         if(annotationCache.get(rush.getClass()).getListsFields().containsKey(field.getName())) {
             Class listClass = annotationCache.get(rush.getClass()).getListsFields().get(field.getName());
-            String tableName = ReflectionUtils.joinTableNameForClass(rush.getClass(), listClass, field);
+            String tableName = ReflectionUtils.joinTableNameForClass(rush.getClass(), listClass, field, annotationCache);
             if (Rush.class.isAssignableFrom(listClass)) {
                 try {
                     List<Rush> children = (List<Rush>) field.get(rush);
@@ -233,7 +233,7 @@ public class ReflectionSaveStatementGenerator implements RushSaveStatementGenera
         }
     }
 
-    protected void createOrUpdateObjects(Map<Class, List<BasicUpdate>> valuesMap, final Map<Class, List<String>> columnsMap, final RushSaveStatementGeneratorCallback saveCallback) {
+    protected void createOrUpdateObjects(Map<Class, List<BasicUpdate>> valuesMap, final Map<Class, List<String>> columnsMap, final Map<Class, AnnotationCache> annotationCache, final RushSaveStatementGeneratorCallback saveCallback) {
 
         for (final Map.Entry<Class, List<BasicUpdate>> entry : valuesMap.entrySet()) {
 
@@ -284,7 +284,7 @@ public class ReflectionSaveStatementGenerator implements RushSaveStatementGenera
                 @Override
                 public void doAction() {
                     String sql = String.format(rushConfig.usingMySql() ? MULTIPLE_INSERT_UPDATE_TEMPLATE_MYSQL : MULTIPLE_INSERT_UPDATE_TEMPLATE_SQLITE,
-                            ReflectionUtils.tableNameForClass(entry.getKey()),
+                            ReflectionUtils.tableNameForClass(entry.getKey(), annotationCache),
                             columns,
                             valuesString.toString());
 

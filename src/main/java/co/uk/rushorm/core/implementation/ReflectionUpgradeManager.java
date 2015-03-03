@@ -3,7 +3,9 @@ package co.uk.rushorm.core.implementation;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import co.uk.rushorm.core.AnnotationCache;
 import co.uk.rushorm.core.Logger;
 import co.uk.rushorm.core.Rush;
 import co.uk.rushorm.core.RushConfig;
@@ -67,14 +69,14 @@ public class ReflectionUpgradeManager implements RushUpgradeManager {
 
     private final Logger logger;
     private final RushConfig rushConfig;
-    
+
     public ReflectionUpgradeManager(Logger logger, RushConfig rushConfig) {
         this.logger = logger;
         this.rushConfig = rushConfig;
     }
     
     @Override
-    public void upgrade(List<Class> classList, UpgradeCallback callback) {
+    public void upgrade(List<Class> classList, UpgradeCallback callback, Map<Class, AnnotationCache> annotationCache) {
 
         try {
 
@@ -85,7 +87,7 @@ public class ReflectionUpgradeManager implements RushUpgradeManager {
             dropAnyObsoleteTempTables(currentTables, callback);
             
             for(Class clazz : classList) {
-                PotentialTableMapping potentialTableMapping = potentialMapping(clazz, potentialJoinMappings);
+                PotentialTableMapping potentialTableMapping = potentialMapping(clazz, potentialJoinMappings, annotationCache);
                 String tableName = nameExists(currentTables, potentialTableMapping.name.oldNames);
                 if(tableName != null) {
                     currentTables.remove(tableName);
@@ -124,8 +126,10 @@ public class ReflectionUpgradeManager implements RushUpgradeManager {
                     tableMapping.name.oldName = tableMapping.name.oldName + TEMP_PREFIX;
                     renameTable(tableMapping.name.oldName, tableMapping.name.newName, callback);
                 }
-                for(String index : tableMapping.indexes) {
-                    callback.runRaw(String.format(DELETE_INDEX, index));
+                if(!rushConfig.usingMySql()) {
+                    for (String index : tableMapping.indexes) {
+                        callback.runRaw(String.format(DELETE_INDEX, index));
+                    }
                 }
             }
 
@@ -136,8 +140,8 @@ public class ReflectionUpgradeManager implements RushUpgradeManager {
                 currentTables.add(tableMapping.name.oldName);
             }
 
-            for(String table : currentTables) {
-                dropTable(table, callback);
+            for(int i = currentTables.size() - 1; i >= 0; i --) {
+                dropTable(currentTables.get(i), callback);
             }
 
         } catch (ClassNotFoundException e) {
@@ -203,54 +207,43 @@ public class ReflectionUpgradeManager implements RushUpgradeManager {
         return columns;
     }
 
-    private PotentialTableMapping potentialMapping(Class clazz,  List<PotentialMapping> joinMapping) throws ClassNotFoundException {
+    private PotentialTableMapping potentialMapping(Class clazz,  List<PotentialMapping> joinMapping, Map<Class, AnnotationCache> annotationCache) throws ClassNotFoundException {
+        PotentialTableMapping tableMapping = new PotentialTableMapping();
 
-            PotentialTableMapping tableMapping = new PotentialTableMapping();
+        List<String> oldClassNames = namesForClass(clazz, annotationCache);
+        String[] classNames = oldClassNames.toArray(new String[oldClassNames.size()]);
+        tableMapping.name = new PotentialMapping(classNames, ReflectionUtils.tableNameForClass(clazz, annotationCache));
 
-            if(clazz.isAnnotationPresent(RushRenamed.class)) {
-                RushRenamed rushRenamed = (RushRenamed) clazz.getAnnotation(RushRenamed.class);
-                String[] names = rushRenamed.names();
-                for(int i = 0; i < names.length; i ++) {
-                    names[i] = ReflectionUtils.tableNameForClass(names[i]);
-                }
-                tableMapping.name = new PotentialMapping(names, ReflectionUtils.tableNameForClass(clazz));
-            } else {
-                String name = ReflectionUtils.tableNameForClass(clazz);
-                tableMapping.name = new PotentialMapping(new String[]{name}, name);
-            }
-
-            List<Field> fields = new ArrayList<>();
-            ReflectionUtils.getAllFields(fields, clazz);
-            for (Field field : fields) {
-                field.setAccessible(true);
-                if (!field.isAnnotationPresent(RushIgnore.class)) {
-                    if(Rush.class.isAssignableFrom(field.getType())){
-                        addJoinMappingIfRequired(joinMapping, clazz, field.getType(), field);
-                    }else if(field.isAnnotationPresent(RushList.class)) {
-                        RushList rushList = field.getAnnotation(RushList.class);
-                        Class listClass = Class.forName(rushList.classname());
-                        addJoinMappingIfRequired(joinMapping, clazz, listClass, field);
-                    }else if(field.isAnnotationPresent(RushRenamed.class)){
-                        RushRenamed rushRenamed = field.getAnnotation(RushRenamed.class);
-                        tableMapping.fields.add(new PotentialMapping(rushRenamed.names(), field.getName()));
-                    }else {
-                        String[] names = new String[]{field.getName()};
-                        tableMapping.fields.add(new PotentialMapping(names, field.getName()));
-                    }
+        List<Field> fields = new ArrayList<>();
+        ReflectionUtils.getAllFields(fields, clazz);
+        for (Field field : fields) {
+            field.setAccessible(true);
+            if (!field.isAnnotationPresent(RushIgnore.class)) {
+                if(Rush.class.isAssignableFrom(field.getType())){
+                    addJoinMappingIfRequired(joinMapping, clazz, field.getType(), field, annotationCache);
+                }else if(field.isAnnotationPresent(RushList.class)) {
+                    RushList rushList = field.getAnnotation(RushList.class);
+                    Class listClass = Class.forName(rushList.classname());
+                    addJoinMappingIfRequired(joinMapping, clazz, listClass, field, annotationCache);
+                }else if(field.isAnnotationPresent(RushRenamed.class)){
+                    RushRenamed rushRenamed = field.getAnnotation(RushRenamed.class);
+                    tableMapping.fields.add(new PotentialMapping(rushRenamed.names(), field.getName()));
+                }else {
+                    String[] names = new String[]{field.getName()};
+                    tableMapping.fields.add(new PotentialMapping(names, field.getName()));
                 }
             }
+        }
+            
         return tableMapping;
     }
 
-    private void addJoinMappingIfRequired(List<PotentialMapping> potentialMappings, Class parent, Class child, Field field) {
+    private void addJoinMappingIfRequired(List<PotentialMapping> potentialMappings, Class parent, Class child, Field field, Map<Class, AnnotationCache> annotationCache) {
 
-        String newName = ReflectionUtils.joinTableNameForClass(parent, child, field);
+        String newName = ReflectionUtils.joinTableNameForClass(parent, child, field, annotationCache);
         List<String> possibleOldNames = new ArrayList<>();
-        List<String> parentNames = oldNamesFromClass(parent);
-        parentNames.add(ReflectionUtils.tableNameForClass(parent));
-
-        List<String> childNames = oldNamesFromClass(child);
-        childNames.add(ReflectionUtils.tableNameForClass(child));
+        List<String> parentNames = namesForClass(parent, annotationCache);
+        List<String> childNames = namesForClass(child, annotationCache);
 
         List<String> fieldNames = new ArrayList<>();
         if(field.isAnnotationPresent(RushRenamed.class)){
@@ -275,8 +268,9 @@ public class ReflectionUpgradeManager implements RushUpgradeManager {
         potentialMappings.add(new PotentialMapping(oldNames, newName));
     }
 
-    private List<String> oldNamesFromClass(Class clazz) {
+    private List<String> namesForClass(Class clazz, Map<Class, AnnotationCache> annotationCache) {
         List<String> names = new ArrayList<>();
+        names.add(ReflectionUtils.tableNameForClass(clazz, annotationCache));
         if(clazz.isAnnotationPresent(RushRenamed.class)){
             RushRenamed rushRenamed = (RushRenamed) clazz.getAnnotation(RushRenamed.class);
             for(String name : rushRenamed.names()) {
@@ -285,7 +279,6 @@ public class ReflectionUpgradeManager implements RushUpgradeManager {
         }
         return names;
     }
-
 
     private void renameTable(String newName, String oldName, UpgradeCallback upgradeCallback) {
         upgradeCallback.runRaw(String.format(RENAME_TABLE, oldName, newName));

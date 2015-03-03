@@ -3,9 +3,12 @@ package co.uk.rushorm.core.implementation;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import co.uk.rushorm.core.AnnotationCache;
 import co.uk.rushorm.core.Rush;
 import co.uk.rushorm.core.RushColumns;
+import co.uk.rushorm.core.RushConfig;
 import co.uk.rushorm.core.annotations.RushIgnore;
 import co.uk.rushorm.core.annotations.RushList;
 import co.uk.rushorm.core.exceptions.RushListAnnotationDoesNotMatchClassException;
@@ -24,10 +27,16 @@ public class ReflectionTableStatementGenerator implements RushTableStatementGene
             "%s" +
             "\n);";
 
-    private static final String JOIN_TEMPLATE = "CREATE TABLE %s (" +
+    private static final String JOIN_TEMPLATE_MYSQL = "CREATE TABLE %s (" +
+            "\n" + ReflectionUtils.RUSH_ID + " int primary key auto_increment" +
+            ",\nparent varchar(255) NOT NULL" +
+            ",\nchild varchar(255) NOT NULL" +
+            "\n);";
+
+    private static final String JOIN_TEMPLATE_SQLITE = "CREATE TABLE %s (" +
             "\n" + ReflectionUtils.RUSH_ID + " integer primary key autoincrement" +
-            ",\nparent text NOT NULL" +
-            ",\nchild text NOT NULL" +
+            ",\nparent varchar(255) NOT NULL" +
+            ",\nchild varchar(255) NOT NULL" +
             ",\nFOREIGN KEY (parent) REFERENCES %s(" + ReflectionUtils.RUSH_ID +")" +
             ",\nFOREIGN KEY (child) REFERENCES %s(" + ReflectionUtils.RUSH_ID + ")" +
             "\n);";
@@ -47,23 +56,31 @@ public class ReflectionTableStatementGenerator implements RushTableStatementGene
         Class child;
     }
 
+    private final RushConfig rushConfig;
+    
+    public ReflectionTableStatementGenerator(RushConfig rushConfig) {
+        this.rushConfig = rushConfig;
+    }
+    
     @Override
-    public void generateStatements(List<Class> classes, RushColumns rushColumns, StatementCallback statementCallback) {
+    public void generateStatements(List<Class> classes, RushColumns rushColumns, StatementCallback statementCallback, Map<Class, AnnotationCache> annotationCache) {
 
         for(Class clazz : classes) {
-            String sql = classToStatement(clazz, rushColumns);
+            String sql = classToStatement(clazz, rushColumns, annotationCache);
             statementCallback.statementCreated(sql);
         }
 
         for(Join join : joins){
-            String joinTableName = ReflectionUtils.joinTableNameForClass(join.key, join.child, join.keyField);
-            String sql = joinToStatement(join, joinTableName);
+            String joinTableName = ReflectionUtils.joinTableNameForClass(join.key, join.child, join.keyField, annotationCache);
+            String sql = joinToStatement(join, joinTableName, annotationCache);
             statementCallback.statementCreated(sql);
-            statementCallback.statementCreated(String.format(CREATE_INDEX, joinTableName, joinTableName));
+            if(!rushConfig.usingMySql()) {
+                statementCallback.statementCreated(String.format(CREATE_INDEX, joinTableName, joinTableName));
+            }
         }
     }
 
-    private String classToStatement(Class clazz, RushColumns rushColumns) {
+    private String classToStatement(Class clazz, RushColumns rushColumns, Map<Class, AnnotationCache> annotationCache) {
 
         StringBuilder columnsStatement = new StringBuilder();
 
@@ -81,13 +98,13 @@ public class ReflectionTableStatementGenerator implements RushTableStatementGene
                 }
             }
         }
-        return String.format(TABLE_TEMPLATE, ReflectionUtils.tableNameForClass(clazz), columnsStatement.toString());
+        return String.format(TABLE_TEMPLATE, ReflectionUtils.tableNameForClass(clazz, annotationCache), columnsStatement.toString());
     }
 
-    private String joinToStatement(Join join, String joinTableName) {
-        return String.format(JOIN_TEMPLATE, joinTableName,
-                ReflectionUtils.tableNameForClass(join.key),
-                ReflectionUtils.tableNameForClass(join.child));
+    private String joinToStatement(Join join, String joinTableName, Map<Class, AnnotationCache> annotationCache) {
+        return String.format(rushConfig.usingMySql() ?JOIN_TEMPLATE_MYSQL : JOIN_TEMPLATE_SQLITE, joinTableName,
+                ReflectionUtils.tableNameForClass(join.key, annotationCache),
+                ReflectionUtils.tableNameForClass(join.child, annotationCache));
     }
 
     private Column columnFromField(Class clazz, Field field, RushColumns rushColumns) {

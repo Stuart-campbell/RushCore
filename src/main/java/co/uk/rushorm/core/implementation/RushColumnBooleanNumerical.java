@@ -4,9 +4,9 @@ import co.uk.rushorm.core.RushColumn;
 import co.uk.rushorm.core.RushStringSanitizer;
 
 /**
- * Created by Stuart on 06/01/15.
+ * Created by Stuart on 03/03/15.
  */
-public class RushColumnBoolean implements RushColumn<Boolean> {
+public class RushColumnBooleanNumerical implements RushColumn<Boolean> {
     @Override
     public String sqlColumnType() {
         return "boolean";
@@ -14,17 +14,16 @@ public class RushColumnBoolean implements RushColumn<Boolean> {
 
     @Override
     public String serialize(Boolean object, RushStringSanitizer stringSanitizer) {
-        return stringSanitizer.sanitize(Boolean.toString(object));
+        return object ? "1" : "0";
     }
 
     @Override
     public Boolean deserialize(String value) {
-        if(value.equals("0")) {
-            return false;
-        } else if(value.equals("1")) {
+        if(value.equals("1")) {
             return true;
+        } else {
+            return false;
         }
-        return Boolean.parseBoolean(value);
     }
 
     @Override
