@@ -8,9 +8,9 @@ import java.util.Map;
 import co.uk.rushorm.core.AnnotationCache;
 import co.uk.rushorm.core.Rush;
 import co.uk.rushorm.core.RushColumns;
+import co.uk.rushorm.core.RushConfig;
 import co.uk.rushorm.core.RushConflict;
 import co.uk.rushorm.core.RushConflictSaveStatementGenerator;
-import co.uk.rushorm.core.RushDeleteStatementGenerator;
 import co.uk.rushorm.core.RushMetaData;
 import co.uk.rushorm.core.RushSaveStatementGeneratorCallback;
 import co.uk.rushorm.core.RushStringSanitizer;
@@ -23,6 +23,9 @@ public class ConflictSaveStatementGenerator extends ReflectionSaveStatementGener
     private static final String SELECT_TEMPLATE = "SELECT * from %s" +
             "\nWHERE " + ReflectionUtils.RUSH_ID + "='%s';";
 
+    public ConflictSaveStatementGenerator(RushConfig rushConfig) {
+        super(rushConfig);
+    }
 
     @Override
     public void conflictsFromGenerateSaveOrUpdate(List<? extends Rush> objects, Map<Class, AnnotationCache> annotationCache, RushStringSanitizer rushStringSanitizer, RushColumns rushColumns, Callback saveCallback) {
@@ -30,7 +33,7 @@ public class ConflictSaveStatementGenerator extends ReflectionSaveStatementGener
     }
 
     @Override
-    protected void createOrUpdateObjects(Map<Class, List<BasicUpdate>> valuesMap, final Map<Class, List<String>> columnsMap, final RushSaveStatementGeneratorCallback saveCallback) {
+    protected void createOrUpdateObjects(Map<Class, List<BasicUpdate>> valuesMap, final Map<Class, List<String>> columnsMap, Map<Class, AnnotationCache> annotationCache, final RushSaveStatementGeneratorCallback saveCallback) {
         Callback callback = (Callback)saveCallback;
 
         List<Class> toRemove = new ArrayList<>();
@@ -39,7 +42,7 @@ public class ConflictSaveStatementGenerator extends ReflectionSaveStatementGener
 
             final List<BasicUpdate> creates = entry.getValue();
             Class clazz = entry.getKey();
-            String sqlTemplate = String.format(SELECT_TEMPLATE, ReflectionUtils.tableNameForClass(clazz), "%s");
+            String sqlTemplate = String.format(SELECT_TEMPLATE, ReflectionUtils.tableNameForClass(clazz, annotationCache), "%s");
 
             Iterator<BasicUpdate> iterator = creates.iterator();
             checkForConflict(clazz, iterator, sqlTemplate, callback);
@@ -55,7 +58,7 @@ public class ConflictSaveStatementGenerator extends ReflectionSaveStatementGener
         }
 
         if(valuesMap.size() > 0) {
-            super.createOrUpdateObjects(valuesMap, columnsMap, saveCallback);
+            super.createOrUpdateObjects(valuesMap, columnsMap, annotationCache, saveCallback);
         }
     }
 

@@ -16,7 +16,9 @@ import co.uk.rushorm.core.implementation.ReflectionSaveStatementGenerator;
 import co.uk.rushorm.core.implementation.ReflectionTableStatementGenerator;
 import co.uk.rushorm.core.implementation.ReflectionUpgradeManager;
 import co.uk.rushorm.core.implementation.ReflectionUtils;
+import co.uk.rushorm.core.implementation.RushAnnotationCache;
 import co.uk.rushorm.core.implementation.RushColumnBoolean;
+import co.uk.rushorm.core.implementation.RushColumnBooleanNumerical;
 import co.uk.rushorm.core.implementation.RushColumnDate;
 import co.uk.rushorm.core.implementation.RushColumnDouble;
 import co.uk.rushorm.core.implementation.RushColumnFloat;
@@ -33,7 +35,12 @@ public class RushCore {
 
     public static void initialize(RushClassFinder rushClassFinder, RushStatementRunner statementRunner, RushQueProvider queProvider, RushConfig rushConfig, RushStringSanitizer rushStringSanitizer, Logger logger, List<RushColumn> columns, RushObjectSerializer rushObjectSerializer, RushObjectDeserializer rushObjectDeserializer) {
 
-        columns.add(new RushColumnBoolean());
+        if(rushConfig.usingMySql()) {
+            columns.add(new RushColumnBooleanNumerical());
+        }else {
+            columns.add(new RushColumnBoolean());
+        }
+        
         columns.add(new RushColumnDate());
         columns.add(new RushColumnDouble());
         columns.add(new RushColumnInt());
@@ -44,12 +51,12 @@ public class RushCore {
 
         RushColumns rushColumns = new RushColumnsImplementation(columns);
 
-        RushUpgradeManager rushUpgradeManager = new ReflectionUpgradeManager(logger);
+        RushUpgradeManager rushUpgradeManager = new ReflectionUpgradeManager(logger, rushConfig);
         Map<Class, AnnotationCache> annotationCache = new HashMap<>();
-        RushSaveStatementGenerator saveStatementGenerator = new ReflectionSaveStatementGenerator();
-        RushConflictSaveStatementGenerator conflictSaveStatementGenerator = new ConflictSaveStatementGenerator();
+        RushSaveStatementGenerator saveStatementGenerator = new ReflectionSaveStatementGenerator(rushConfig);
+        RushConflictSaveStatementGenerator conflictSaveStatementGenerator = new ConflictSaveStatementGenerator(rushConfig);
         RushDeleteStatementGenerator deleteStatementGenerator = new ReflectionDeleteStatementGenerator();
-        RushTableStatementGenerator rushTableStatementGenerator = new ReflectionTableStatementGenerator();
+        RushTableStatementGenerator rushTableStatementGenerator = new ReflectionTableStatementGenerator(rushConfig);
         RushClassLoader rushClassLoader = new ReflectionClassLoader();
 
         initialize(rushUpgradeManager, saveStatementGenerator, conflictSaveStatementGenerator, deleteStatementGenerator, rushClassFinder, rushTableStatementGenerator, statementRunner, queProvider, rushConfig, rushClassLoader, rushStringSanitizer, logger, rushObjectSerializer, rushObjectDeserializer, rushColumns, annotationCache);
@@ -61,7 +68,7 @@ public class RushCore {
                                   RushDeleteStatementGenerator deleteStatementGenerator,
                                   RushClassFinder rushClassFinder,
                                   RushTableStatementGenerator rushTableStatementGenerator,
-                                  RushStatementRunner statementRunner,
+                                  final RushStatementRunner statementRunner,
                                   final RushQueProvider queProvider,
                                   final RushConfig rushConfig,
                                   RushClassLoader rushClassLoader,
@@ -75,17 +82,19 @@ public class RushCore {
         rushCore = new RushCore(saveStatementGenerator, rushConflictSaveStatementGenerator, deleteStatementGenerator, statementRunner, queProvider, rushConfig, rushTableStatementGenerator, rushClassLoader, rushStringSanitizer, logger, rushObjectSerializer, rushObjectDeserializer, rushColumns, annotationCache);
         rushCore.loadAnnotationCache(rushClassFinder);
 
+        final boolean isFirstRun = statementRunner.isFirstRun();
         final RushQue que = queProvider.blockForNextQue();
         new Thread(new Runnable() {
             @Override
             public void run() {
-                if (rushConfig.firstRun()) {
+                if (isFirstRun) {
                     rushCore.createTables(new ArrayList<>(rushCore.annotationCache.keySet()), que);
-                } else if(rushConfig.inDebug() || rushConfig.upgrade()){
+                } else if(rushConfig.inDebug() || statementRunner.requiresUpgrade(rushConfig.dbVersion(), que)){
                     rushCore.upgrade(new ArrayList<>(rushCore.annotationCache.keySet()), rushUpgradeManager, que);
                 } else {
                     queProvider.queComplete(que);
                 }
+                statementRunner.initializeComplete(rushConfig.dbVersion());
             }
         }).start();
     }
@@ -244,6 +253,10 @@ public class RushCore {
         });
     }
 
+    public Map<Class, AnnotationCache> getAnnotationCache() {
+        return annotationCache;
+    }
+
     /* protected */
     protected String sanitize(String string) {
         return rushStringSanitizer.sanitize(string);
@@ -304,7 +317,7 @@ public class RushCore {
         for(Class clazz : rushClassFinder.findClasses(rushConfig)) {
             List<Field> fields = new ArrayList<>();
             ReflectionUtils.getAllFields(fields, clazz);
-            annotationCache.put(clazz, new AnnotationCache(clazz, fields));
+            annotationCache.put(clazz, new RushAnnotationCache(clazz, fields, rushConfig));
         }       
     }
 
@@ -315,7 +328,7 @@ public class RushCore {
                 logger.logSql(statement);
                 statementRunner.runRaw(statement, que);
             }
-        });
+        }, annotationCache);
         queProvider.queComplete(que);
     }
 
@@ -337,7 +350,7 @@ public class RushCore {
             public void createClasses(List<Class> missingClasses) {
                 createTables(missingClasses, que);
             }
-        });
+        }, annotationCache);
         queProvider.queComplete(que);
     }
 

@@ -8,10 +8,7 @@ import java.util.Map;
 
 import co.uk.rushorm.core.AnnotationCache;
 import co.uk.rushorm.core.Rush;
-import co.uk.rushorm.core.RushColumns;
 import co.uk.rushorm.core.RushDeleteStatementGenerator;
-import co.uk.rushorm.core.RushSaveStatementGenerator;
-import co.uk.rushorm.core.RushStringSanitizer;
 
 /**
  * Created by Stuart on 16/02/15.
@@ -54,7 +51,7 @@ public class ReflectionDeleteStatementGenerator implements RushDeleteStatementGe
                     try {
                         Rush child = (Rush) field.get(rush);
                         if (child != null) {
-                            joinTableName = ReflectionUtils.joinTableNameForClass(rush.getClass(), child.getClass(), field);
+                            joinTableName = ReflectionUtils.joinTableNameForClass(rush.getClass(), child.getClass(), field, annotationCache);
                             if (!annotationCache.get(rush.getClass()).getDisableAutoDelete().contains(field.getName())) {
                                 generateDelete(child, annotationCache, deletes, joinDeletes, callback);
                             }
@@ -66,7 +63,7 @@ public class ReflectionDeleteStatementGenerator implements RushDeleteStatementGe
                     try {
                         List<Rush> fieldChildren = (List<Rush>) field.get(rush);
                         if (fieldChildren != null && fieldChildren.size() > 0) {
-                            joinTableName = ReflectionUtils.joinTableNameForClass(rush.getClass(), annotationCache.get(rush.getClass()).getListsFields().get(field.getName()), field);
+                            joinTableName = ReflectionUtils.joinTableNameForClass(rush.getClass(), annotationCache.get(rush.getClass()).getListsFields().get(field.getName()), field, annotationCache);
                             if (!annotationCache.get(rush.getClass()).getDisableAutoDelete().contains(field.getName())) {
                                 for(Rush child : fieldChildren) {
                                     generateDelete(child, annotationCache, deletes, joinDeletes, callback);
@@ -86,7 +83,7 @@ public class ReflectionDeleteStatementGenerator implements RushDeleteStatementGe
             }
         }
 
-        String table = ReflectionUtils.tableNameForClass(rush.getClass());
+        String table = ReflectionUtils.tableNameForClass(rush.getClass(), annotationCache);
         if(!deletes.containsKey(table)) {
             deletes.put(table, new ArrayList<String>());
         }

@@ -44,8 +44,8 @@ public class RushSearch {
         }
 
         protected String getStatement(Class parentClazz){
-            String joinTable = ReflectionUtils.joinTableNameForClass(parentClazz, clazz, field);
-            String parentTable = ReflectionUtils.tableNameForClass(parentClazz);
+            String joinTable = ReflectionUtils.joinTableNameForClass(parentClazz, clazz, field, RushCore.getInstance().getAnnotationCache());
+            String parentTable = ReflectionUtils.tableNameForClass(parentClazz, RushCore.getInstance().getAnnotationCache());
             joinString.append("\n").append(String.format(JOIN, joinTable, parentTable, joinTable));
             return joinTable + ".child" + modifier + "'" + id + "'";
         }
@@ -102,7 +102,7 @@ public class RushSearch {
             order.append(orderStatements.get(i).getStatement());
         }
 
-        return String.format(WHERE_TEMPLATE, ReflectionUtils.tableNameForClass(clazz), joinString.toString(), whereString.toString(), order.toString());
+        return String.format(WHERE_TEMPLATE, ReflectionUtils.tableNameForClass(clazz, RushCore.getInstance().getAnnotationCache()), joinString.toString(), whereString.toString(), order.toString());
     }
 
 

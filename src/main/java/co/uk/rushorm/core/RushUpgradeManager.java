@@ -1,6 +1,7 @@
 package co.uk.rushorm.core;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by Stuart on 10/12/14.
@@ -13,6 +14,6 @@ public interface RushUpgradeManager {
         public void createClasses(List<Class> missingClasses);
     }
 
-    public void upgrade(List<Class> classList, UpgradeCallback callback);
+    public void upgrade(List<Class> classList, UpgradeCallback callback, Map<Class, AnnotationCache> annotationCache);
 
 }

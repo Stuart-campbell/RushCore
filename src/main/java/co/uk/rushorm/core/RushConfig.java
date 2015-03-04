@@ -6,9 +6,8 @@ package co.uk.rushorm.core;
 public interface RushConfig {
     public String dbName();
     public int dbVersion();
-    public boolean firstRun();
-    public boolean upgrade();
     public boolean inDebug();
     public boolean log();
     public boolean requireTableAnnotation();
+    public boolean usingMySql();
 }

@@ -12,8 +12,6 @@ import co.uk.rushorm.core.RushClassLoader;
 import co.uk.rushorm.core.RushColumns;
 import co.uk.rushorm.core.RushMetaData;
 import co.uk.rushorm.core.RushStatementRunner;
-import co.uk.rushorm.core.annotations.RushIgnore;
-import co.uk.rushorm.core.annotations.RushList;
 
 /**
  * Created by Stuart on 14/12/14.
@@ -116,7 +114,7 @@ public class ReflectionClassLoader implements RushClassLoader {
                 joins.put(clazz, new ArrayList<Join>());
                 joinTables.put(clazz, new ArrayList<String>());
             }
-            String tableName = ReflectionUtils.joinTableNameForClass(object.getClass(), clazz, field);
+            String tableName = ReflectionUtils.joinTableNameForClass(object.getClass(), clazz, field, annotationCache);
             joins.get(clazz).add(new Join(object, tableName, field));
             if(!joinTables.get(clazz).contains(tableName)) {
                 joinTables.get(clazz).add(tableName);
@@ -132,7 +130,7 @@ public class ReflectionClassLoader implements RushClassLoader {
 
     private <T extends Rush> void addChildrenToList(final Class<T> clazz, final RushColumns rushColumns, final Map<Class, AnnotationCache> annotationCache, final List<Join> joins, final List<String> tableNames, final Map<Class, Map<String, T>> loadedClasses, final LoadCallback callback) {
 
-        final String tableName = ReflectionUtils.tableNameForClass(clazz);
+        final String tableName = ReflectionUtils.tableNameForClass(clazz, annotationCache);
         final Map<Integer, String> tableMap = new HashMap<>();
         final Map<String, Map<String, Join>> parentMap = new HashMap<>();
         final String joinsString = joinSection(tableName, tableNames, tableMap, parentMap);

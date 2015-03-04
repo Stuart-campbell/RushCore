@@ -5,7 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import co.uk.rushorm.core.RushSaveStatementGenerator;
+import co.uk.rushorm.core.AnnotationCache;
 import co.uk.rushorm.core.RushStatementGeneratorCallback;
 
 
@@ -25,21 +25,22 @@ public class ReflectionUtils {
 
     private static final String MULTIPLE_DELETE_JOIN_TEMPLATE = "DELETE FROM %s \n" +
             "WHERE %s;";
-
-    public static String tableNameForClass(Class clazz) {
-        return tableNameForClass(clazz.getName());
+    
+    public static String tableNameForClass(Class clazz, Map<Class, AnnotationCache> annotationCache) {
+        String name = annotationCache.get(clazz).getTableName();
+        return tableNameForClass(name);
     }
 
     public static String tableNameForClass(String name) {
         return RUSH_TABLE_PREFIX + name.replace(".", "_").replace("$", "_");
     }
 
-    public static String joinTableNameForClass(Class parent, Class child, Field field) {
-        return joinTableNameForClass(parent, child, field.getName());
+    public static String joinTableNameForClass(Class parent, Class child, Field field, Map<Class, AnnotationCache> annotationCache) {
+        return joinTableNameForClass(parent, child, field.getName(), annotationCache);
     }
 
-    public static String joinTableNameForClass(Class parent, Class child, String field) {
-        return joinTableNameForClass(tableNameForClass(parent), tableNameForClass(child), field);
+    public static String joinTableNameForClass(Class parent, Class child, String field, Map<Class, AnnotationCache> annotationCache) {
+        return joinTableNameForClass(tableNameForClass(parent, annotationCache), tableNameForClass(child, annotationCache), field);
     }
 
     public static String joinTableNameForClass(String parentName, String childName, String fieldName) {

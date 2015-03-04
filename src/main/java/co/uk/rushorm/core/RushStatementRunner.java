@@ -7,6 +7,7 @@ import java.util.List;
  */
 public interface RushStatementRunner {
 
+
     public interface ValuesCallback {
         public boolean hasNext();
         public List<String> next();
@@ -17,4 +18,8 @@ public interface RushStatementRunner {
     public ValuesCallback runGet(String sql, RushQue que);
     public void startTransition(RushQue que);
     public void endTransition(RushQue que);
+    
+    public boolean isFirstRun();
+    public void initializeComplete(long version);
+    public boolean requiresUpgrade(long version, RushQue que);
 }
