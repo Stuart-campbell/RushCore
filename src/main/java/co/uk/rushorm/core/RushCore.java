@@ -27,6 +27,7 @@ import co.uk.rushorm.core.implementation.RushColumnLong;
 import co.uk.rushorm.core.implementation.RushColumnShort;
 import co.uk.rushorm.core.implementation.RushColumnString;
 import co.uk.rushorm.core.implementation.RushColumnsImplementation;
+import co.uk.rushorm.core.implementation.RushSqlUtils;
 
 /**
  * Created by Stuart on 10/12/14.
@@ -220,11 +221,11 @@ public class RushCore {
     }
 
     public String serialize(List<? extends Rush> rush) {
-        return serialize(rush, ReflectionUtils.RUSH_ID);
+        return serialize(rush, RushSqlUtils.RUSH_ID);
     }
 
     public String serialize(List<? extends Rush> rush, String idName) {
-        return serialize(rush, idName, ReflectionUtils.RUSH_VERSION);
+        return serialize(rush, idName, RushSqlUtils.RUSH_VERSION);
     }
 
     public String serialize(List<? extends Rush> rush, String idName, String versionName) {
@@ -237,11 +238,11 @@ public class RushCore {
     }
 
     public List<Rush> deserialize(String string) {
-        return deserialize(string, ReflectionUtils.RUSH_ID);
+        return deserialize(string, RushSqlUtils.RUSH_ID);
     }
 
     public List<Rush> deserialize(String string, String idName) {
-        return deserialize(string, idName, ReflectionUtils.RUSH_VERSION);
+        return deserialize(string, idName, RushSqlUtils.RUSH_VERSION);
     }
 
     public List<Rush> deserialize(String string, String idName, String versionName) {

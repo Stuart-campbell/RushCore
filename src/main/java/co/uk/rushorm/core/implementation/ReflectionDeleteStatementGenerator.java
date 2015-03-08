@@ -15,9 +15,6 @@ import co.uk.rushorm.core.RushDeleteStatementGenerator;
  */
 public class ReflectionDeleteStatementGenerator implements RushDeleteStatementGenerator {
 
-    private static final String MULTIPLE_DELETE_TEMPLATE = "DELETE FROM %s \n" +
-            "WHERE %s;";
-
     @Override
     public void generateDelete(List<? extends Rush> objects, Map<Class, AnnotationCache> annotationCache, RushDeleteStatementGenerator.Callback callback) {
         Map<String, List<String>> joinDeletes = new HashMap<>();
@@ -105,7 +102,7 @@ public class ReflectionDeleteStatementGenerator implements RushDeleteStatementGe
 
                 @Override
                 public void actionAtIndex(int index) {
-                    columnsString.append(ReflectionUtils.RUSH_ID)
+                    columnsString.append(RushSqlUtils.RUSH_ID)
                             .append("='")
                             .append(values.get(index))
                             .append("'");
@@ -118,7 +115,7 @@ public class ReflectionDeleteStatementGenerator implements RushDeleteStatementGe
 
                 @Override
                 public void doAction() {
-                    String sql = String.format(MULTIPLE_DELETE_TEMPLATE, entry.getKey(),
+                    String sql = String.format(RushSqlUtils.MULTIPLE_DELETE_TEMPLATE, entry.getKey(),
                             columnsString.toString());
                     saveCallback.deleteStatement(sql);
                 }

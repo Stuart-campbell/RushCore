@@ -20,18 +20,6 @@ import co.uk.rushorm.core.RushStringSanitizer;
  */
 public class ReflectionSaveStatementGenerator implements RushSaveStatementGenerator {
 
-    private static final String MULTIPLE_INSERT_UPDATE_TEMPLATE_MYSQL = "REPLACE INTO %s " +
-            "(%s)\n" +
-            "VALUES %s;";
-
-    private static final String MULTIPLE_INSERT_UPDATE_TEMPLATE_SQLITE = "INSERT OR REPLACE INTO %s " +
-            "(%s)\n" +
-            "VALUES %s;";
-    
-    private static final String MULTIPLE_INSERT_JOIN_TEMPLATE = "INSERT INTO %s " +
-            "(parent, child)\n" +
-            "VALUES %s;";
-
     /*** Save ***/
     private class BasicJoin {
         private final String table;
@@ -225,7 +213,7 @@ public class ReflectionSaveStatementGenerator implements RushSaveStatementGenera
 
                 @Override
                 public void doAction() {
-                    String sql = String.format(MULTIPLE_INSERT_JOIN_TEMPLATE, entry.getKey(),
+                    String sql = String.format(RushSqlUtils.MULTIPLE_INSERT_JOIN_TEMPLATE, entry.getKey(),
                             columnsString.toString());
                     saveCallback.createdOrUpdateStatement(sql);
                 }
@@ -238,13 +226,13 @@ public class ReflectionSaveStatementGenerator implements RushSaveStatementGenera
         for (final Map.Entry<Class, List<BasicUpdate>> entry : valuesMap.entrySet()) {
 
             StringBuilder columnsBuilder = new StringBuilder();
-            columnsBuilder.append(ReflectionUtils.RUSH_ID)
+            columnsBuilder.append(RushSqlUtils.RUSH_ID)
                     .append(",")
-                    .append(ReflectionUtils.RUSH_CREATED)
+                    .append(RushSqlUtils.RUSH_CREATED)
                     .append(",")
-                    .append(ReflectionUtils.RUSH_UPDATED)
+                    .append(RushSqlUtils.RUSH_UPDATED)
                     .append(",")
-                    .append(ReflectionUtils.RUSH_VERSION)
+                    .append(RushSqlUtils.RUSH_VERSION)
                     .append(commaSeparated(columnsMap.get(entry.getKey())));
 
             final String columns = columnsBuilder.toString();
@@ -283,7 +271,7 @@ public class ReflectionSaveStatementGenerator implements RushSaveStatementGenera
 
                 @Override
                 public void doAction() {
-                    String sql = String.format(rushConfig.usingMySql() ? MULTIPLE_INSERT_UPDATE_TEMPLATE_MYSQL : MULTIPLE_INSERT_UPDATE_TEMPLATE_SQLITE,
+                    String sql = String.format(rushConfig.usingMySql() ? RushSqlUtils.MULTIPLE_INSERT_UPDATE_TEMPLATE_MYSQL : RushSqlUtils.MULTIPLE_INSERT_UPDATE_TEMPLATE_SQLITE,
                             ReflectionUtils.tableNameForClass(entry.getKey(), annotationCache),
                             columns,
                             valuesString.toString());

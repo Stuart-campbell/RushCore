@@ -50,23 +50,6 @@ public class ReflectionUpgradeManager implements RushUpgradeManager {
         }
     }
 
-    private static final String TEMP_PREFIX = "_temp";
-    private static final String COLUMNS_INFO_SQLITE = "PRAGMA table_info(%s)";
-    private static final String COLUMNS_INFO_MYSQL = "DESCRIBE %s";
-    private static final String RENAME_TABLE = "ALTER TABLE %s RENAME TO %s";
-    private static final String TABLE_INFO_SQLITE = "SELECT name FROM sqlite_master WHERE type='table';";
-    private static final String TABLE_INFO_MYSQL = "select TABLE_NAME from information_schema.tables where TABLE_SCHEMA='%s';";
-    private static final String DROP = "DROP TABLE %s";
-    private static final String MOVE_ROWS = "INSERT INTO %s(" + ReflectionUtils.RUSH_ID + "," + ReflectionUtils.RUSH_CREATED + "," + ReflectionUtils.RUSH_UPDATED + "," + ReflectionUtils.RUSH_VERSION + "%s)\n" +
-            "SELECT " + ReflectionUtils.RUSH_ID + "," + ReflectionUtils.RUSH_CREATED + "," + ReflectionUtils.RUSH_UPDATED + "," + ReflectionUtils.RUSH_VERSION  + "%s\n" +
-            "FROM %s;";
-
-    private static final String MOVE_JOIN_ROWS = "INSERT INTO %s(" + ReflectionUtils.RUSH_ID + "%s)\n" +
-            "SELECT " + ReflectionUtils.RUSH_ID + "%s\n" +
-            "FROM %s;";
-
-    private static final String DELETE_INDEX = "DROP INDEX %s;";
-
     private final Logger logger;
     private final RushConfig rushConfig;
 
@@ -123,12 +106,12 @@ public class ReflectionUpgradeManager implements RushUpgradeManager {
 
             for (TableMapping tableMapping : tableMappings) {
                 if(tableMapping.name.oldName.equals(tableMapping.name.newName)) {
-                    tableMapping.name.oldName = tableMapping.name.oldName + TEMP_PREFIX;
+                    tableMapping.name.oldName = tableMapping.name.oldName + RushSqlUtils.TEMP_PREFIX;
                     renameTable(tableMapping.name.oldName, tableMapping.name.newName, callback);
                 }
                 if(!rushConfig.usingMySql()) {
                     for (String index : tableMapping.indexes) {
-                        callback.runRaw(String.format(DELETE_INDEX, index));
+                        callback.runRaw(String.format(RushSqlUtils.DELETE_INDEX, index));
                     }
                 }
             }
@@ -163,9 +146,9 @@ public class ReflectionUpgradeManager implements RushUpgradeManager {
     private void dropAnyObsoleteTempTables(List<String> tables, UpgradeCallback callback) {
         List<String> tablesToRemove = new ArrayList<>();
         for (String table : tables) {
-            if(table.endsWith(TEMP_PREFIX)) {
+            if(table.endsWith(RushSqlUtils.TEMP_PREFIX)) {
                 logger.logError("Dropping tmp table \"" + table + "\" from last upgrade, this implies something when wrong during the last upgrade.");
-                callback.runRaw(String.format(DROP, table));
+                callback.runRaw(String.format(RushSqlUtils.DROP, table));
                 tablesToRemove.add(table);
             }
         }
@@ -177,15 +160,15 @@ public class ReflectionUpgradeManager implements RushUpgradeManager {
     private List<String> currentTables(UpgradeCallback callback) {
         String sql;
         if(rushConfig.usingMySql()) {
-            sql = String.format(TABLE_INFO_MYSQL, rushConfig.dbName());
+            sql = String.format(RushSqlUtils.TABLE_INFO_MYSQL, rushConfig.dbName());
         }else {
-            sql = TABLE_INFO_SQLITE;
+            sql = RushSqlUtils.TABLE_INFO_SQLITE;
         }
         RushStatementRunner.ValuesCallback values = callback.runStatement(sql);
         List<String> tables = new ArrayList<>();
         while(values.hasNext()) {
             String table = values.next().get(0);
-            if(table.startsWith(ReflectionUtils.RUSH_TABLE_PREFIX)) {
+            if(table.startsWith(RushSqlUtils.RUSH_TABLE_PREFIX)) {
                 tables.add(table);
             }
         }
@@ -194,12 +177,12 @@ public class ReflectionUpgradeManager implements RushUpgradeManager {
     }
 
     private List<String> tablesFields(String table, UpgradeCallback callback) {
-        RushStatementRunner.ValuesCallback values = callback.runStatement(String.format(rushConfig.usingMySql() ? COLUMNS_INFO_MYSQL : COLUMNS_INFO_SQLITE, table));
+        RushStatementRunner.ValuesCallback values = callback.runStatement(String.format(rushConfig.usingMySql() ? RushSqlUtils.COLUMNS_INFO_MYSQL : RushSqlUtils.COLUMNS_INFO_SQLITE, table));
         List<String> columns = new ArrayList<>();
         while(values.hasNext()) {
             List<String> columnsInfo = values.next();
             String column = columnsInfo.get(1);
-            if(!column.equals(ReflectionUtils.RUSH_ID)) {
+            if(!column.equals(RushSqlUtils.RUSH_ID)) {
                 columns.add(columnsInfo.get(1));
             }
         }
@@ -281,11 +264,11 @@ public class ReflectionUpgradeManager implements RushUpgradeManager {
     }
 
     private void renameTable(String newName, String oldName, UpgradeCallback upgradeCallback) {
-        upgradeCallback.runRaw(String.format(RENAME_TABLE, oldName, newName));
+        upgradeCallback.runRaw(String.format(RushSqlUtils.RENAME_TABLE, oldName, newName));
     }
 
     private void dropTable(String name, UpgradeCallback upgradeCallback){
-        upgradeCallback.runRaw(String.format(DROP, name));
+        upgradeCallback.runRaw(String.format(RushSqlUtils.DROP, name));
     }
 
     private void moveRows(TableMapping tableMapping, UpgradeCallback upgradeCallback) {
@@ -297,7 +280,7 @@ public class ReflectionUpgradeManager implements RushUpgradeManager {
             toRows.append(", ")
                     .append(mapping.newName);
         }
-        String sql = String.format(tableMapping.isJoin ? MOVE_JOIN_ROWS : MOVE_ROWS, tableMapping.name.newName, toRows.toString(), fromRows.toString(), tableMapping.name.oldName);
+        String sql = String.format(tableMapping.isJoin ? RushSqlUtils.MOVE_JOIN_ROWS : RushSqlUtils.MOVE_ROWS, tableMapping.name.newName, toRows.toString(), fromRows.toString(), tableMapping.name.oldName);
         upgradeCallback.runRaw(sql);
     }
 }

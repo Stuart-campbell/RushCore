@@ -20,9 +20,6 @@ import co.uk.rushorm.core.RushStringSanitizer;
  */
 public class ConflictSaveStatementGenerator extends ReflectionSaveStatementGenerator implements RushConflictSaveStatementGenerator {
 
-    private static final String SELECT_TEMPLATE = "SELECT * from %s" +
-            "\nWHERE " + ReflectionUtils.RUSH_ID + "='%s';";
-
     public ConflictSaveStatementGenerator(RushConfig rushConfig) {
         super(rushConfig);
     }
@@ -42,7 +39,7 @@ public class ConflictSaveStatementGenerator extends ReflectionSaveStatementGener
 
             final List<BasicUpdate> creates = entry.getValue();
             Class clazz = entry.getKey();
-            String sqlTemplate = String.format(SELECT_TEMPLATE, ReflectionUtils.tableNameForClass(clazz, annotationCache), "%s");
+            String sqlTemplate = String.format(RushSqlUtils.SELECT_TEMPLATE, ReflectionUtils.tableNameForClass(clazz, annotationCache), "%s");
 
             Iterator<BasicUpdate> iterator = creates.iterator();
             checkForConflict(clazz, iterator, sqlTemplate, callback);

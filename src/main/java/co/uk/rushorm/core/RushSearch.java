@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.List;
 
 import co.uk.rushorm.core.implementation.ReflectionUtils;
+import co.uk.rushorm.core.implementation.RushSqlUtils;
 
 /**
  * Created by Stuart on 14/12/14.
@@ -13,7 +14,7 @@ public class RushSearch {
 
     private static final String WHERE_TEMPLATE = "SELECT * from %s %s %s %s;";
 
-    private static final String JOIN = "JOIN %s on (%s." + ReflectionUtils.RUSH_ID + "=%s.parent)";
+    private static final String JOIN = "JOIN %s on (%s." + RushSqlUtils.RUSH_ID + "=%s.parent)";
 
     private final List<Where> whereStatements = new ArrayList<>();
     private final List<OrderBy> orderStatements = new ArrayList<>();
@@ -107,7 +108,7 @@ public class RushSearch {
 
 
     public RushSearch whereId(String id) {
-        return whereEqual(ReflectionUtils.RUSH_ID, id);
+        return whereEqual(RushSqlUtils.RUSH_ID, id);
     }
 
     public RushSearch and(){

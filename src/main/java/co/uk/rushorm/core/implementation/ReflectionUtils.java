@@ -14,25 +14,15 @@ import co.uk.rushorm.core.RushStatementGeneratorCallback;
  */
 public class ReflectionUtils {
 
-    public static final String RUSH_TABLE_PREFIX = "rush_";
-
-    public static final String RUSH_ID = "rush_id";
-    public static final String RUSH_CREATED = "rush_created";
-    public static final String RUSH_UPDATED = "rush_updated";
-    public static final String RUSH_VERSION = "rush_version";
-
     public static final int GROUP_SIZE = 250;
 
-    private static final String MULTIPLE_DELETE_JOIN_TEMPLATE = "DELETE FROM %s \n" +
-            "WHERE %s;";
-    
     public static String tableNameForClass(Class clazz, Map<Class, AnnotationCache> annotationCache) {
         String name = annotationCache.get(clazz).getTableName();
         return tableNameForClass(name);
     }
 
     public static String tableNameForClass(String name) {
-        return RUSH_TABLE_PREFIX + name.replace(".", "_").replace("$", "_");
+        return RushSqlUtils.RUSH_TABLE_PREFIX + name.replace(".", "_").replace("$", "_");
     }
 
     public static String joinTableNameForClass(Class parent, Class child, Field field, Map<Class, AnnotationCache> annotationCache) {
@@ -104,7 +94,7 @@ public class ReflectionUtils {
 
                 @Override
                 public void doAction() {
-                    String sql = String.format(MULTIPLE_DELETE_JOIN_TEMPLATE, entry.getKey(),
+                    String sql = String.format(RushSqlUtils.MULTIPLE_DELETE_TEMPLATE, entry.getKey(),
                             columnsString.toString());
 
                     callback.deleteStatement(sql);

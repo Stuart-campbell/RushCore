@@ -199,7 +199,7 @@ public class ReflectionClassLoader implements RushClassLoader {
                     .append(joinTableName)
                     .append(" ON ")
                     .append(tableName)
-                    .append(".").append(ReflectionUtils.RUSH_ID)
+                    .append(".").append(RushSqlUtils.RUSH_ID)
                     .append(" = ")
                     .append(joinTableName)
                     .append(".child \n");

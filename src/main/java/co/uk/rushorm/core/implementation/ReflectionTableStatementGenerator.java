@@ -19,30 +19,6 @@ import co.uk.rushorm.core.RushTableStatementGenerator;
  */
 public class ReflectionTableStatementGenerator implements RushTableStatementGenerator {
 
-    private static final String TABLE_TEMPLATE = "CREATE TABLE %s (" +
-            "\n" + ReflectionUtils.RUSH_ID + " varchar(255) primary key," +
-            "\n" + ReflectionUtils.RUSH_CREATED + " long," +
-            "\n" + ReflectionUtils.RUSH_UPDATED + " long," +
-            "\n" + ReflectionUtils.RUSH_VERSION + " long" +
-            "%s" +
-            "\n);";
-
-    private static final String JOIN_TEMPLATE_MYSQL = "CREATE TABLE %s (" +
-            "\n" + ReflectionUtils.RUSH_ID + " int primary key auto_increment" +
-            ",\nparent varchar(255) NOT NULL" +
-            ",\nchild varchar(255) NOT NULL" +
-            "\n);";
-
-    private static final String JOIN_TEMPLATE_SQLITE = "CREATE TABLE %s (" +
-            "\n" + ReflectionUtils.RUSH_ID + " integer primary key autoincrement" +
-            ",\nparent varchar(255) NOT NULL" +
-            ",\nchild varchar(255) NOT NULL" +
-            ",\nFOREIGN KEY (parent) REFERENCES %s(" + ReflectionUtils.RUSH_ID +")" +
-            ",\nFOREIGN KEY (child) REFERENCES %s(" + ReflectionUtils.RUSH_ID + ")" +
-            "\n);";
-
-    private static final String CREATE_INDEX = "CREATE INDEX %s_idx ON %s(child);";
-
     private List<Join> joins = new ArrayList<>();
 
     private class Column {
@@ -75,7 +51,7 @@ public class ReflectionTableStatementGenerator implements RushTableStatementGene
             String sql = joinToStatement(join, joinTableName, annotationCache);
             statementCallback.statementCreated(sql);
             if(!rushConfig.usingMySql()) {
-                statementCallback.statementCreated(String.format(CREATE_INDEX, joinTableName, joinTableName));
+                statementCallback.statementCreated(String.format(RushSqlUtils.CREATE_INDEX, joinTableName, joinTableName));
             }
         }
     }
@@ -98,11 +74,11 @@ public class ReflectionTableStatementGenerator implements RushTableStatementGene
                 }
             }
         }
-        return String.format(TABLE_TEMPLATE, ReflectionUtils.tableNameForClass(clazz, annotationCache), columnsStatement.toString());
+        return String.format(RushSqlUtils.TABLE_TEMPLATE, ReflectionUtils.tableNameForClass(clazz, annotationCache), columnsStatement.toString());
     }
 
     private String joinToStatement(Join join, String joinTableName, Map<Class, AnnotationCache> annotationCache) {
-        return String.format(rushConfig.usingMySql() ?JOIN_TEMPLATE_MYSQL : JOIN_TEMPLATE_SQLITE, joinTableName,
+        return String.format(rushConfig.usingMySql() ? RushSqlUtils.JOIN_TEMPLATE_MYSQL : RushSqlUtils.JOIN_TEMPLATE_SQLITE, joinTableName,
                 ReflectionUtils.tableNameForClass(join.key, annotationCache),
                 ReflectionUtils.tableNameForClass(join.child, annotationCache));
     }
