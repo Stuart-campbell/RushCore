@@ -34,10 +34,6 @@ import co.uk.rushorm.core.implementation.RushSqlUtils;
  */
 public class RushCore {
 
-    public interface InitializeListener {
-        public void initialized(boolean firstRun);
-    }
-
     public static void initialize(RushClassFinder rushClassFinder, RushStatementRunner statementRunner, RushQueProvider queProvider, RushConfig rushConfig, RushStringSanitizer rushStringSanitizer, Logger logger, List<RushColumn> columns, RushObjectSerializer rushObjectSerializer, RushObjectDeserializer rushObjectDeserializer) {
 
         if(rushConfig.usingMySql()) {
