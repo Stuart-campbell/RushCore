@@ -34,6 +34,10 @@ import co.uk.rushorm.core.implementation.RushSqlUtils;
  */
 public class RushCore {
 
+    public interface InitializeListener {
+        public void initialized(boolean firstRun);
+    }
+
     public static void initialize(RushClassFinder rushClassFinder, RushStatementRunner statementRunner, RushQueProvider queProvider, RushConfig rushConfig, RushStringSanitizer rushStringSanitizer, Logger logger, List<RushColumn> columns, RushObjectSerializer rushObjectSerializer, RushObjectDeserializer rushObjectDeserializer) {
 
         if(rushConfig.usingMySql()) {
@@ -60,7 +64,7 @@ public class RushCore {
         RushTableStatementGenerator rushTableStatementGenerator = new ReflectionTableStatementGenerator(rushConfig);
         RushClassLoader rushClassLoader = new ReflectionClassLoader();
 
-        initialize(rushUpgradeManager, saveStatementGenerator, conflictSaveStatementGenerator, deleteStatementGenerator, rushClassFinder, rushTableStatementGenerator, statementRunner, queProvider, rushConfig, rushClassLoader, rushStringSanitizer, logger, rushObjectSerializer, rushObjectDeserializer, rushColumns, annotationCache);
+        initialize(rushUpgradeManager, saveStatementGenerator, conflictSaveStatementGenerator, deleteStatementGenerator, rushClassFinder, rushTableStatementGenerator, statementRunner, queProvider, rushConfig, rushClassLoader, rushStringSanitizer, logger, rushObjectSerializer, rushObjectDeserializer, rushColumns, annotationCache, null);
     }
 
     public static void initialize(final RushUpgradeManager rushUpgradeManager,
@@ -78,7 +82,8 @@ public class RushCore {
                                   RushObjectSerializer rushObjectSerializer,
                                   RushObjectDeserializer rushObjectDeserializer,
                                   RushColumns rushColumns,
-                                  Map<Class, AnnotationCache> annotationCache) {
+                                  Map<Class, AnnotationCache> annotationCache,
+                                  final InitializeListener initializeListener) {
 
         rushCore = new RushCore(saveStatementGenerator, rushConflictSaveStatementGenerator, deleteStatementGenerator, statementRunner, queProvider, rushConfig, rushTableStatementGenerator, rushClassLoader, rushStringSanitizer, logger, rushObjectSerializer, rushObjectDeserializer, rushColumns, annotationCache);
         rushCore.loadAnnotationCache(rushClassFinder);
@@ -96,6 +101,9 @@ public class RushCore {
                     queProvider.queComplete(que);
                 }
                 statementRunner.initializeComplete(rushConfig.dbVersion());
+                if(initializeListener != null) {
+                    initializeListener.initialized(isFirstRun);
+                }
             }
         }).start();
     }
