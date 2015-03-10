@@ -1,7 +1,7 @@
 # RushCore
 ### Object-relational mapping for Java
 
-RushCore includes the pure Java classes used in RushOrm for Android. See https://github.com/Stuart-campbell/RushOrm
+RushCore includes the pure Java classes used in RushOrm for Android and RushServer. See https://github.com/Stuart-campbell/RushOrm
 
 <hr>
 ### Licence Apache License, Version 2.0
