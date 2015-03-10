@@ -1,6 +1,8 @@
 package co.uk.rushorm.core.implementation;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -106,8 +108,8 @@ public class ReflectionClassLoader implements RushClassLoader {
         Class clazz = null;
         if (Rush.class.isAssignableFrom(field.getType())) {
             clazz = field.getType();
-        } else if(annotationCache.get(object.getClass()).getListsFields().containsKey(field.getName())){
-            clazz = annotationCache.get(object.getClass()).getListsFields().get(field.getName());
+        } else if(annotationCache.get(object.getClass()).getListsClasses().containsKey(field.getName())){
+            clazz = annotationCache.get(object.getClass()).getListsClasses().get(field.getName());
         }
         if(clazz != null) {
             if(!joins.containsKey(clazz)) {
@@ -179,7 +181,14 @@ public class ReflectionClassLoader implements RushClassLoader {
                         } else {
                             List<Rush> children = (List<Rush>)join.field.get(parent);
                             if(children == null) {
-                                children = new ArrayList<>();
+                                try {
+                                    Class listClazz = annotationCache.get(clazz).getListsTypes().get(join.field.getName());
+                                    Constructor<? extends List> constructor = listClazz.getConstructor();
+                                    children = constructor.newInstance();
+                                } catch (InstantiationException | InvocationTargetException | NoSuchMethodException e) {
+                                    e.printStackTrace();
+                                    children = new ArrayList<>();
+                                }
                                 join.field.set(parent, children);
                             }
                             children.add(object);

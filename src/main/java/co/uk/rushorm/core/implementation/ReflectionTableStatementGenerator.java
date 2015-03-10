@@ -11,7 +11,6 @@ import co.uk.rushorm.core.RushColumns;
 import co.uk.rushorm.core.RushConfig;
 import co.uk.rushorm.core.annotations.RushIgnore;
 import co.uk.rushorm.core.annotations.RushList;
-import co.uk.rushorm.core.exceptions.RushListAnnotationDoesNotMatchClassException;
 import co.uk.rushorm.core.RushTableStatementGenerator;
 
 /**
@@ -99,13 +98,7 @@ public class ReflectionTableStatementGenerator implements RushTableStatementGene
 
             // One to many join table
             RushList rushList = field.getAnnotation(RushList.class);
-            Class listClass;
-            try {
-                listClass = Class.forName(rushList.classname());
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-                throw new RushListAnnotationDoesNotMatchClassException();
-            }
+            Class listClass = rushList.classType();
 
             if (Rush.class.isAssignableFrom(listClass)) {
 

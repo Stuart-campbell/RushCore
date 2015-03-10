@@ -206,7 +206,7 @@ public class ReflectionUpgradeManager implements RushUpgradeManager {
                     addJoinMappingIfRequired(joinMapping, clazz, field.getType(), field, annotationCache);
                 }else if(field.isAnnotationPresent(RushList.class)) {
                     RushList rushList = field.getAnnotation(RushList.class);
-                    Class listClass = Class.forName(rushList.classname());
+                    Class listClass = rushList.classType();
                     addJoinMappingIfRequired(joinMapping, clazz, listClass, field, annotationCache);
                 }else if(field.isAnnotationPresent(RushRenamed.class)){
                     RushRenamed rushRenamed = field.getAnnotation(RushRenamed.class);

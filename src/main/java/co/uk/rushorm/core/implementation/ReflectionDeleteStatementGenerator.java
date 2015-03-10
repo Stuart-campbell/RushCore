@@ -56,11 +56,11 @@ public class ReflectionDeleteStatementGenerator implements RushDeleteStatementGe
                     } catch (IllegalAccessException e) {
                         e.printStackTrace();
                     }
-                } else if (annotationCache.get(rush.getClass()).getListsFields().containsKey(field.getName())) {
+                } else if (annotationCache.get(rush.getClass()).getListsClasses().containsKey(field.getName())) {
                     try {
                         List<Rush> fieldChildren = (List<Rush>) field.get(rush);
                         if (fieldChildren != null && fieldChildren.size() > 0) {
-                            joinTableName = ReflectionUtils.joinTableNameForClass(rush.getClass(), annotationCache.get(rush.getClass()).getListsFields().get(field.getName()), field, annotationCache);
+                            joinTableName = ReflectionUtils.joinTableNameForClass(rush.getClass(), annotationCache.get(rush.getClass()).getListsClasses().get(field.getName()), field, annotationCache);
                             if (!annotationCache.get(rush.getClass()).getDisableAutoDelete().contains(field.getName())) {
                                 for(Rush child : fieldChildren) {
                                     generateDelete(child, annotationCache, deletes, joinDeletes, callback);

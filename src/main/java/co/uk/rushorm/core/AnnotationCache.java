@@ -9,7 +9,9 @@ import java.util.Map;
 public interface AnnotationCache {
     public List<String> getFieldToIgnore();
     public List<String> getDisableAutoDelete();
-    public Map<String, Class> getListsFields();
+    public Map<String, Class<? extends Rush>> getListsClasses();
+    public Map<String, Class<? extends List>> getListsTypes();
     public String getSerializationName();
     public String getTableName();
+
 }

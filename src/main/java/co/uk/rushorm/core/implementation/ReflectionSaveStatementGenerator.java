@@ -165,8 +165,8 @@ public class ReflectionSaveStatementGenerator implements RushSaveStatementGenera
             return tableName;
         }
 
-        if(annotationCache.get(rush.getClass()).getListsFields().containsKey(field.getName())) {
-            Class listClass = annotationCache.get(rush.getClass()).getListsFields().get(field.getName());
+        if(annotationCache.get(rush.getClass()).getListsClasses().containsKey(field.getName())) {
+            Class listClass = annotationCache.get(rush.getClass()).getListsClasses().get(field.getName());
             String tableName = ReflectionUtils.joinTableNameForClass(rush.getClass(), listClass, field, annotationCache);
             if (Rush.class.isAssignableFrom(listClass)) {
                 try {

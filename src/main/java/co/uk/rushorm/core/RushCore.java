@@ -250,7 +250,19 @@ public class RushCore {
     }
 
     public List<Rush> deserialize(String string, String idName, String versionName) {
-        return rushObjectDeserializer.deserialize(string, idName, versionName, rushColumns, annotationCache, new RushObjectDeserializer.Callback() {
+        return deserialize(string, idName, versionName, Rush.class);
+    }
+
+    public <T extends Rush> List<T> deserialize(String string,  Class<T> clazz) {
+        return deserialize(string, RushSqlUtils.RUSH_ID, clazz);
+    }
+
+    public <T extends Rush> List<T> deserialize(String string, String idName, Class<T> clazz) {
+        return deserialize(string, idName, RushSqlUtils.RUSH_VERSION, clazz);
+    }
+
+    public <T extends Rush> List<T> deserialize(String string, String idName, String versionName, Class<T> clazz) {
+        return rushObjectDeserializer.deserialize(string, idName, versionName, rushColumns, annotationCache, clazz, new RushObjectDeserializer.Callback() {
             @Override
             public void addRush(Rush rush, RushMetaData rushMetaData) {
                 idTable.put(rush, rushMetaData);
