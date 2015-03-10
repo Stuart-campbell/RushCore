@@ -8,6 +8,6 @@ import java.util.Map;
  */
 public interface RushSaveStatementGenerator {
 
-    public void generateSaveOrUpdate(List<? extends Rush> objects, Map<Class, AnnotationCache> annotationCache, RushStringSanitizer rushStringSanitizer, RushColumns rushColumns, RushSaveStatementGeneratorCallback saveCallback);
+    public void generateSaveOrUpdate(List<? extends Rush> objects, Map<Class<? extends Rush>, AnnotationCache> annotationCache, RushStringSanitizer rushStringSanitizer, RushColumns rushColumns, RushSaveStatementGeneratorCallback saveCallback);
 
 }

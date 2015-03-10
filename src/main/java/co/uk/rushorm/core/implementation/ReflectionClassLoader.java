@@ -36,11 +36,11 @@ public class ReflectionClassLoader implements RushClassLoader {
     }
 
     @Override
-    public <T extends Rush> List<T> loadClasses(Class<T> clazz, RushColumns rushColumns, Map<Class, AnnotationCache> annotationCache, RushStatementRunner.ValuesCallback valuesCallback, LoadCallback callback) {
+    public <T extends Rush> List<T> loadClasses(Class<T> clazz, RushColumns rushColumns, Map<Class<? extends Rush>, AnnotationCache> annotationCache, RushStatementRunner.ValuesCallback valuesCallback, LoadCallback callback) {
         return loadClasses(clazz, rushColumns, annotationCache, valuesCallback, callback, new HashMap<Class, Map<String, T>>(), null);
     }
 
-    public <T extends Rush> List<T> loadClasses(Class<T> clazz, RushColumns rushColumns, Map<Class, AnnotationCache> annotationCache, RushStatementRunner.ValuesCallback valuesCallback, LoadCallback callback, Map<Class, Map<String, T>> loadedClasses, AttachChild<T> attachChild) {
+    public <T extends Rush> List<T> loadClasses(Class<T> clazz, RushColumns rushColumns, Map<Class<? extends Rush>, AnnotationCache> annotationCache, RushStatementRunner.ValuesCallback valuesCallback, LoadCallback callback, Map<Class, Map<String, T>> loadedClasses, AttachChild<T> attachChild) {
         try {
 
             Map<Class, List<Join>> joins = new HashMap<>();
@@ -68,7 +68,7 @@ public class ReflectionClassLoader implements RushClassLoader {
         return null;
     }
 
-    private <T extends Rush> T loadClass(Class<T> clazz, RushColumns rushColumns, Map<Class, AnnotationCache> annotationCache, List<String> values, Map<Class, List<Join>> joins, Map<Class, List<String>> joinTables, Map<Class, Map<String, T>> loadedClasses, LoadCallback callback) throws IllegalAccessException, InstantiationException, ClassNotFoundException {
+    private <T extends Rush> T loadClass(Class<T> clazz, RushColumns rushColumns, Map<Class<? extends Rush>, AnnotationCache> annotationCache, List<String> values, Map<Class, List<Join>> joins, Map<Class, List<String>> joinTables, Map<Class, Map<String, T>> loadedClasses, LoadCallback callback) throws IllegalAccessException, InstantiationException, ClassNotFoundException {
 
         RushMetaData rushMetaData = new RushMetaData(values.get(0), Long.parseLong(values.get(1)), Long.parseLong(values.get(2)), Long.parseLong(values.get(3)));
 
@@ -104,7 +104,7 @@ public class ReflectionClassLoader implements RushClassLoader {
         return object;
     }
 
-    private <T extends Rush> boolean loadJoinField(T object, RushColumns rushColumns, Map<Class, AnnotationCache> annotationCache, Field field, Map<Class, List<Join>> joins,  Map<Class, List<String>> joinTables) {
+    private <T extends Rush> boolean loadJoinField(T object, RushColumns rushColumns, Map<Class<? extends Rush>, AnnotationCache> annotationCache, Field field, Map<Class, List<Join>> joins,  Map<Class, List<String>> joinTables) {
         Class clazz = null;
         if (Rush.class.isAssignableFrom(field.getType())) {
             clazz = field.getType();
@@ -130,7 +130,7 @@ public class ReflectionClassLoader implements RushClassLoader {
             "%s" +
             "WHERE %s;";
 
-    private <T extends Rush> void addChildrenToList(final Class<T> clazz, final RushColumns rushColumns, final Map<Class, AnnotationCache> annotationCache, final List<Join> joins, final List<String> tableNames, final Map<Class, Map<String, T>> loadedClasses, final LoadCallback callback) {
+    private <T extends Rush> void addChildrenToList(final Class<T> clazz, final RushColumns rushColumns, final Map<Class<? extends Rush>, AnnotationCache> annotationCache, final List<Join> joins, final List<String> tableNames, final Map<Class, Map<String, T>> loadedClasses, final LoadCallback callback) {
 
         final String tableName = ReflectionUtils.tableNameForClass(clazz, annotationCache);
         final Map<Integer, String> tableMap = new HashMap<>();
@@ -182,7 +182,7 @@ public class ReflectionClassLoader implements RushClassLoader {
                             List<Rush> children = (List<Rush>)join.field.get(parent);
                             if(children == null) {
                                 try {
-                                    Class listClazz = annotationCache.get(clazz).getListsTypes().get(join.field.getName());
+                                    Class<? extends List> listClazz = annotationCache.get(join.parent.getClass()).getListsTypes().get(join.field.getName());
                                     Constructor<? extends List> constructor = listClazz.getConstructor();
                                     children = constructor.newInstance();
                                 } catch (InstantiationException | InvocationTargetException | NoSuchMethodException e) {

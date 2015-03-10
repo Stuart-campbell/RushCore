@@ -25,20 +25,20 @@ public class ConflictSaveStatementGenerator extends ReflectionSaveStatementGener
     }
 
     @Override
-    public void conflictsFromGenerateSaveOrUpdate(List<? extends Rush> objects, Map<Class, AnnotationCache> annotationCache, RushStringSanitizer rushStringSanitizer, RushColumns rushColumns, Callback saveCallback) {
+    public void conflictsFromGenerateSaveOrUpdate(List<? extends Rush> objects, Map<Class<? extends Rush>, AnnotationCache> annotationCache, RushStringSanitizer rushStringSanitizer, RushColumns rushColumns, Callback saveCallback) {
         generateSaveOrUpdate(objects, annotationCache, rushStringSanitizer, rushColumns, saveCallback);
     }
 
     @Override
-    protected void createOrUpdateObjects(Map<Class, List<BasicUpdate>> valuesMap, final Map<Class, List<String>> columnsMap, Map<Class, AnnotationCache> annotationCache, final RushSaveStatementGeneratorCallback saveCallback) {
+    protected void createOrUpdateObjects(Map<Class<? extends Rush>, List<BasicUpdate>> valuesMap, final Map<Class<? extends Rush>, List<String>> columnsMap, Map<Class<? extends Rush>, AnnotationCache> annotationCache, final RushSaveStatementGeneratorCallback saveCallback) {
         Callback callback = (Callback)saveCallback;
 
-        List<Class> toRemove = new ArrayList<>();
+        List<Class<? extends Rush>> toRemove = new ArrayList<>();
 
-        for (final Map.Entry<Class, List<BasicUpdate>> entry : valuesMap.entrySet()) {
+        for (final Map.Entry<Class<? extends Rush>, List<BasicUpdate>> entry : valuesMap.entrySet()) {
 
             final List<BasicUpdate> creates = entry.getValue();
-            Class clazz = entry.getKey();
+            Class<? extends Rush> clazz = entry.getKey();
             String sqlTemplate = String.format(RushSqlUtils.SELECT_TEMPLATE, ReflectionUtils.tableNameForClass(clazz, annotationCache), "%s");
 
             Iterator<BasicUpdate> iterator = creates.iterator();
@@ -49,7 +49,7 @@ public class ConflictSaveStatementGenerator extends ReflectionSaveStatementGener
             }
         }
 
-        for(Class clazz : toRemove) {
+        for(Class<? extends Rush> clazz : toRemove) {
             valuesMap.remove(clazz);
             columnsMap.remove(clazz);
         }

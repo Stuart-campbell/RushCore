@@ -16,7 +16,7 @@ import co.uk.rushorm.core.RushDeleteStatementGenerator;
 public class ReflectionDeleteStatementGenerator implements RushDeleteStatementGenerator {
 
     @Override
-    public void generateDelete(List<? extends Rush> objects, Map<Class, AnnotationCache> annotationCache, RushDeleteStatementGenerator.Callback callback) {
+    public void generateDelete(List<? extends Rush> objects, Map<Class<? extends Rush>, AnnotationCache> annotationCache, RushDeleteStatementGenerator.Callback callback) {
         Map<String, List<String>> joinDeletes = new HashMap<>();
         Map<String, List<String>> deletes = new HashMap<>();
 
@@ -28,7 +28,7 @@ public class ReflectionDeleteStatementGenerator implements RushDeleteStatementGe
         deleteMany(deletes, callback);
     }
 
-    public void generateDelete(Rush rush, Map<Class, AnnotationCache> annotationCache, Map<String, List<String>> deletes, Map<String, List<String>> joinDeletes, RushDeleteStatementGenerator.Callback callback) {
+    public void generateDelete(Rush rush, Map<Class<? extends Rush>, AnnotationCache> annotationCache, Map<String, List<String>> deletes, Map<String, List<String>> joinDeletes, RushDeleteStatementGenerator.Callback callback) {
 
         if (rush.getId() == null) {
             return;

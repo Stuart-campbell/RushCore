@@ -13,6 +13,6 @@ public interface RushConflictSaveStatementGenerator {
         public <T extends Rush> T load(Class T, String sql);
     }
 
-    public void conflictsFromGenerateSaveOrUpdate(List<? extends Rush> objects, Map<Class, AnnotationCache> annotationCache, RushStringSanitizer rushStringSanitizer, RushColumns rushColumns, Callback saveCallback);
+    public void conflictsFromGenerateSaveOrUpdate(List<? extends Rush> objects, Map<Class<? extends Rush>, AnnotationCache> annotationCache, RushStringSanitizer rushStringSanitizer, RushColumns rushColumns, Callback saveCallback);
 
 }

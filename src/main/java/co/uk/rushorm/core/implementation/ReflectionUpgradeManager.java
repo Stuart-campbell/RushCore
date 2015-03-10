@@ -59,7 +59,7 @@ public class ReflectionUpgradeManager implements RushUpgradeManager {
     }
     
     @Override
-    public void upgrade(List<Class> classList, UpgradeCallback callback, Map<Class, AnnotationCache> annotationCache) {
+    public void upgrade(List<Class<? extends Rush>> classList, UpgradeCallback callback, Map<Class<? extends Rush>, AnnotationCache> annotationCache) {
 
         try {
 
@@ -190,7 +190,7 @@ public class ReflectionUpgradeManager implements RushUpgradeManager {
         return columns;
     }
 
-    private PotentialTableMapping potentialMapping(Class clazz,  List<PotentialMapping> joinMapping, Map<Class, AnnotationCache> annotationCache) throws ClassNotFoundException {
+    private PotentialTableMapping potentialMapping(Class<? extends Rush> clazz,  List<PotentialMapping> joinMapping, Map<Class<? extends Rush>, AnnotationCache> annotationCache) throws ClassNotFoundException {
         PotentialTableMapping tableMapping = new PotentialTableMapping();
 
         List<String> oldClassNames = namesForClass(clazz, annotationCache);
@@ -203,7 +203,7 @@ public class ReflectionUpgradeManager implements RushUpgradeManager {
             field.setAccessible(true);
             if (!field.isAnnotationPresent(RushIgnore.class)) {
                 if(Rush.class.isAssignableFrom(field.getType())){
-                    addJoinMappingIfRequired(joinMapping, clazz, field.getType(), field, annotationCache);
+                    addJoinMappingIfRequired(joinMapping, clazz, (Class<? extends Rush>) field.getType(), field, annotationCache);
                 }else if(field.isAnnotationPresent(RushList.class)) {
                     RushList rushList = field.getAnnotation(RushList.class);
                     Class listClass = rushList.classType();
@@ -221,7 +221,7 @@ public class ReflectionUpgradeManager implements RushUpgradeManager {
         return tableMapping;
     }
 
-    private void addJoinMappingIfRequired(List<PotentialMapping> potentialMappings, Class parent, Class child, Field field, Map<Class, AnnotationCache> annotationCache) {
+    private void addJoinMappingIfRequired(List<PotentialMapping> potentialMappings, Class<? extends Rush> parent, Class<? extends Rush> child, Field field, Map<Class<? extends Rush>, AnnotationCache> annotationCache) {
 
         String newName = ReflectionUtils.joinTableNameForClass(parent, child, field, annotationCache);
         List<String> possibleOldNames = new ArrayList<>();
@@ -251,7 +251,7 @@ public class ReflectionUpgradeManager implements RushUpgradeManager {
         potentialMappings.add(new PotentialMapping(oldNames, newName));
     }
 
-    private List<String> namesForClass(Class clazz, Map<Class, AnnotationCache> annotationCache) {
+    private List<String> namesForClass(Class<? extends Rush> clazz, Map<Class<? extends Rush>, AnnotationCache> annotationCache) {
         List<String> names = new ArrayList<>();
         names.add(ReflectionUtils.tableNameForClass(clazz, annotationCache));
         if(clazz.isAnnotationPresent(RushRenamed.class)){

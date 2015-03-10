@@ -44,7 +44,7 @@ public class RushSearch {
             this.modifier = modifier;
         }
 
-        protected String getStatement(Class parentClazz){
+        protected String getStatement(Class<? extends Rush> parentClazz){
             String joinTable = ReflectionUtils.joinTableNameForClass(parentClazz, clazz, field, RushCore.getInstance().getAnnotationCache());
             String parentTable = ReflectionUtils.tableNameForClass(parentClazz, RushCore.getInstance().getAnnotationCache());
             joinString.append("\n").append(String.format(JOIN, joinTable, parentTable, joinTable));
@@ -64,7 +64,7 @@ public class RushSearch {
         private Where(String string){
             element = string;
         }
-        protected String getStatement(Class parentClazz){
+        protected String getStatement(Class<? extends Rush> parentClazz){
             return element;
         }
     }

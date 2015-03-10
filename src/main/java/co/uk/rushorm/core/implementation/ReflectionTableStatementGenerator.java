@@ -26,9 +26,9 @@ public class ReflectionTableStatementGenerator implements RushTableStatementGene
     }
 
     private class Join {
-        Class key;
+        Class<? extends Rush> key;
         Field keyField;
-        Class child;
+        Class<? extends Rush> child;
     }
 
     private final RushConfig rushConfig;
@@ -38,7 +38,7 @@ public class ReflectionTableStatementGenerator implements RushTableStatementGene
     }
     
     @Override
-    public void generateStatements(List<Class> classes, RushColumns rushColumns, StatementCallback statementCallback, Map<Class, AnnotationCache> annotationCache) {
+    public void generateStatements(List<Class<? extends Rush>> classes, RushColumns rushColumns, StatementCallback statementCallback, Map<Class<? extends Rush>, AnnotationCache> annotationCache) {
 
         for(Class clazz : classes) {
             String sql = classToStatement(clazz, rushColumns, annotationCache);
@@ -55,7 +55,7 @@ public class ReflectionTableStatementGenerator implements RushTableStatementGene
         }
     }
 
-    private String classToStatement(Class clazz, RushColumns rushColumns, Map<Class, AnnotationCache> annotationCache) {
+    private String classToStatement(Class<? extends Rush> clazz, RushColumns rushColumns, Map<Class<? extends Rush>, AnnotationCache> annotationCache) {
 
         StringBuilder columnsStatement = new StringBuilder();
 
@@ -76,13 +76,13 @@ public class ReflectionTableStatementGenerator implements RushTableStatementGene
         return String.format(RushSqlUtils.TABLE_TEMPLATE, ReflectionUtils.tableNameForClass(clazz, annotationCache), columnsStatement.toString());
     }
 
-    private String joinToStatement(Join join, String joinTableName, Map<Class, AnnotationCache> annotationCache) {
+    private String joinToStatement(Join join, String joinTableName, Map<Class<? extends Rush>, AnnotationCache> annotationCache) {
         return String.format(rushConfig.usingMySql() ? RushSqlUtils.JOIN_TEMPLATE_MYSQL : RushSqlUtils.JOIN_TEMPLATE_SQLITE, joinTableName,
                 ReflectionUtils.tableNameForClass(join.key, annotationCache),
                 ReflectionUtils.tableNameForClass(join.child, annotationCache));
     }
 
-    private Column columnFromField(Class clazz, Field field, RushColumns rushColumns) {
+    private Column columnFromField(Class<? extends Rush> clazz, Field field, RushColumns rushColumns) {
 
         if(Rush.class.isAssignableFrom(field.getType())){
 
@@ -90,7 +90,7 @@ public class ReflectionTableStatementGenerator implements RushTableStatementGene
             Join join = new Join();
             join.key = clazz;
             join.keyField = field;
-            join.child = field.getType();
+            join.child = (Class<? extends Rush>) field.getType();
             joins.add(join);
             return null;
 

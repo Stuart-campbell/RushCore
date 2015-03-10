@@ -13,6 +13,6 @@ public interface RushDeleteStatementGenerator {
         public void deleteStatement(String sql);
     }
 
-    public void generateDelete(List<? extends Rush> objects, Map<Class, AnnotationCache> annotationCache, Callback deleteCallback);
+    public void generateDelete(List<? extends Rush> objects, Map<Class<? extends Rush>, AnnotationCache> annotationCache, Callback deleteCallback);
 
 }

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import co.uk.rushorm.core.AnnotationCache;
+import co.uk.rushorm.core.Rush;
 import co.uk.rushorm.core.RushStatementGeneratorCallback;
 
 
@@ -16,7 +17,7 @@ public class ReflectionUtils {
 
     public static final int GROUP_SIZE = 250;
 
-    public static String tableNameForClass(Class clazz, Map<Class, AnnotationCache> annotationCache) {
+    public static String tableNameForClass(Class<? extends Rush> clazz, Map<Class<? extends Rush>, AnnotationCache> annotationCache) {
         String name = annotationCache.get(clazz).getTableName();
         return tableNameForClass(name);
     }
@@ -25,11 +26,11 @@ public class ReflectionUtils {
         return RushSqlUtils.RUSH_TABLE_PREFIX + name.replace(".", "_").replace("$", "_");
     }
 
-    public static String joinTableNameForClass(Class parent, Class child, Field field, Map<Class, AnnotationCache> annotationCache) {
+    public static String joinTableNameForClass(Class<? extends Rush> parent, Class<? extends Rush> child, Field field, Map<Class<? extends Rush>, AnnotationCache> annotationCache) {
         return joinTableNameForClass(parent, child, field.getName(), annotationCache);
     }
 
-    public static String joinTableNameForClass(Class parent, Class child, String field, Map<Class, AnnotationCache> annotationCache) {
+    public static String joinTableNameForClass(Class<? extends Rush> parent, Class<? extends Rush> child, String field, Map<Class<? extends Rush>, AnnotationCache> annotationCache) {
         return joinTableNameForClass(tableNameForClass(parent, annotationCache), tableNameForClass(child, annotationCache), field);
     }
 

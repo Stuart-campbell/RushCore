@@ -59,12 +59,12 @@ public class ReflectionSaveStatementGenerator implements RushSaveStatementGenera
     }
 
     @Override
-    public void generateSaveOrUpdate(List<? extends Rush> objects, Map<Class, AnnotationCache> annotationCache, RushStringSanitizer rushStringSanitizer, RushColumns rushColumns, RushSaveStatementGeneratorCallback saveCallback) {
+    public void generateSaveOrUpdate(List<? extends Rush> objects, Map<Class<? extends Rush>, AnnotationCache> annotationCache, RushStringSanitizer rushStringSanitizer, RushColumns rushColumns, RushSaveStatementGeneratorCallback saveCallback) {
 
         List<Rush> rushObjects = new ArrayList<>();
 
-        Map<Class, List<BasicUpdate>> updateValues = new HashMap<>();
-        Map<Class, List<String>> columns = new HashMap<>();
+        Map<Class<? extends Rush>, List<BasicUpdate>> updateValues = new HashMap<>();
+        Map<Class<? extends Rush>, List<String>> columns = new HashMap<>();
 
         Map<String, List<String>> joinDeletes = new HashMap<>();
         Map<String, List<BasicJoin>> joinValues = new HashMap<>();
@@ -81,11 +81,11 @@ public class ReflectionSaveStatementGenerator implements RushSaveStatementGenera
     }
 
     private void generateSaveOrUpdate(Rush rush, List<Rush> rushObjects,
-                                      Map<Class, AnnotationCache> annotationCache,
+                                      Map<Class<? extends Rush>, AnnotationCache> annotationCache,
                                       RushStringSanitizer rushStringSanitizer,
                                       RushColumns rushColumns,
-                                      Map<Class, List<BasicUpdate>> updateValuesMap,
-                                      Map<Class, List<String>> columnsMap,
+                                      Map<Class<? extends Rush>, List<BasicUpdate>> updateValuesMap,
+                                      Map<Class<? extends Rush>, List<String>> columnsMap,
                                       Map<String, List<String>> joinDeletesMap,
                                       Map<String, List<BasicJoin>> joinValuesMap,
                                       RushSaveStatementGeneratorCallback saveCallback) {
@@ -150,10 +150,10 @@ public class ReflectionSaveStatementGenerator implements RushSaveStatementGenera
         updateValuesMap.get(rush.getClass()).add(new BasicUpdate(values, rush, rushMetaData));
     }
 
-    private String joinFromField(List<BasicJoin> joins, Rush rush, Field field, Map<Class, AnnotationCache> annotationCache) {
+    private String joinFromField(List<BasicJoin> joins, Rush rush, Field field, Map<Class<? extends Rush>, AnnotationCache> annotationCache) {
 
         if (Rush.class.isAssignableFrom(field.getType())) {
-            String tableName = ReflectionUtils.joinTableNameForClass(rush.getClass(), field.getType(), field, annotationCache);
+            String tableName = ReflectionUtils.joinTableNameForClass(rush.getClass(), (Class<? extends Rush>) field.getType(), field, annotationCache);
             try {
                 Rush child = (Rush) field.get(rush);
                 if (child != null) {
@@ -221,9 +221,9 @@ public class ReflectionSaveStatementGenerator implements RushSaveStatementGenera
         }
     }
 
-    protected void createOrUpdateObjects(Map<Class, List<BasicUpdate>> valuesMap, final Map<Class, List<String>> columnsMap, final Map<Class, AnnotationCache> annotationCache, final RushSaveStatementGeneratorCallback saveCallback) {
+    protected void createOrUpdateObjects(Map<Class<? extends Rush>, List<BasicUpdate>> valuesMap, final Map<Class<? extends Rush>, List<String>> columnsMap, final Map<Class<? extends Rush>, AnnotationCache> annotationCache, final RushSaveStatementGeneratorCallback saveCallback) {
 
-        for (final Map.Entry<Class, List<BasicUpdate>> entry : valuesMap.entrySet()) {
+        for (final Map.Entry<Class<? extends Rush>, List<BasicUpdate>> entry : valuesMap.entrySet()) {
 
             StringBuilder columnsBuilder = new StringBuilder();
             columnsBuilder.append(RushSqlUtils.RUSH_ID)

@@ -53,7 +53,7 @@ public class RushCore {
         RushColumns rushColumns = new RushColumnsImplementation(columns);
 
         RushUpgradeManager rushUpgradeManager = new ReflectionUpgradeManager(logger, rushConfig);
-        Map<Class, AnnotationCache> annotationCache = new HashMap<>();
+        Map<Class<? extends Rush>, AnnotationCache> annotationCache = new HashMap<>();
         RushSaveStatementGenerator saveStatementGenerator = new ReflectionSaveStatementGenerator(rushConfig);
         RushConflictSaveStatementGenerator conflictSaveStatementGenerator = new ConflictSaveStatementGenerator(rushConfig);
         RushDeleteStatementGenerator deleteStatementGenerator = new ReflectionDeleteStatementGenerator();
@@ -78,7 +78,7 @@ public class RushCore {
                                   RushObjectSerializer rushObjectSerializer,
                                   RushObjectDeserializer rushObjectDeserializer,
                                   RushColumns rushColumns,
-                                  Map<Class, AnnotationCache> annotationCache,
+                                  Map<Class<? extends Rush>, AnnotationCache> annotationCache,
                                   final InitializeListener initializeListener) {
 
         rushCore = new RushCore(saveStatementGenerator, rushConflictSaveStatementGenerator, deleteStatementGenerator, statementRunner, queProvider, rushConfig, rushTableStatementGenerator, rushClassLoader, rushStringSanitizer, logger, rushObjectSerializer, rushObjectDeserializer, rushColumns, annotationCache);
@@ -270,7 +270,7 @@ public class RushCore {
         });
     }
 
-    public Map<Class, AnnotationCache> getAnnotationCache() {
+    public Map<Class<? extends Rush>, AnnotationCache> getAnnotationCache() {
         return annotationCache;
     }
 
@@ -296,7 +296,7 @@ public class RushCore {
     private final RushObjectSerializer rushObjectSerializer;
     private final RushObjectDeserializer rushObjectDeserializer;
     private final RushColumns rushColumns;
-    private final Map<Class, AnnotationCache> annotationCache;
+    private final Map<Class<? extends Rush>, AnnotationCache> annotationCache;
 
 
     private RushCore(RushSaveStatementGenerator saveStatementGenerator,
@@ -312,7 +312,7 @@ public class RushCore {
                      RushObjectSerializer rushObjectSerializer,
                      RushObjectDeserializer rushObjectDeserializer,
                      RushColumns rushColumns,
-                     Map<Class, AnnotationCache> annotationCache) {
+                     Map<Class<? extends Rush>, AnnotationCache> annotationCache) {
 
         this.saveStatementGenerator = saveStatementGenerator;
         this.rushConflictSaveStatementGenerator = rushConflictSaveStatementGenerator;
@@ -338,7 +338,7 @@ public class RushCore {
         }       
     }
 
-    private void createTables(List<Class> classes, final RushQue que) {
+    private void createTables(List<Class<? extends Rush>> classes, final RushQue que) {
         rushTableStatementGenerator.generateStatements(classes, rushColumns, new RushTableStatementGenerator.StatementCallback() {
             @Override
             public void statementCreated(String statement) {
@@ -349,7 +349,7 @@ public class RushCore {
         queProvider.queComplete(que);
     }
 
-    private void upgrade(List<Class> classes, RushUpgradeManager rushUpgradeManager, final RushQue que) {
+    private void upgrade(List<Class<? extends Rush>> classes, RushUpgradeManager rushUpgradeManager, final RushQue que) {
         rushUpgradeManager.upgrade(classes, new RushUpgradeManager.UpgradeCallback() {
             @Override
             public RushStatementRunner.ValuesCallback runStatement(String sql) {
@@ -364,7 +364,7 @@ public class RushCore {
             }
 
             @Override
-            public void createClasses(List<Class> missingClasses) {
+            public void createClasses(List<Class<? extends Rush>> missingClasses) {
                 createTables(missingClasses, que);
             }
         }, annotationCache);

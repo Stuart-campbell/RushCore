@@ -12,6 +12,6 @@ public interface RushTableStatementGenerator {
         public void statementCreated(String statement);
     }
 
-    public void generateStatements(List<Class> classes, RushColumns rushColumns, StatementCallback statementCallback, Map<Class, AnnotationCache> annotationCache);
+    public void generateStatements(List<Class<? extends Rush>> classes, RushColumns rushColumns, StatementCallback statementCallback, Map<Class<? extends Rush>, AnnotationCache> annotationCache);
 
 }
