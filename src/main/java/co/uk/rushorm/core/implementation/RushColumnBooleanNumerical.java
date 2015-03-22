@@ -19,7 +19,7 @@ public class RushColumnBooleanNumerical implements RushColumn<Boolean> {
 
     @Override
     public Boolean deserialize(String value) {
-        if(value.equals("1")) {
+        if(value.equals("1") || value.equalsIgnoreCase("true") || value.equalsIgnoreCase("yes")) {
             return true;
         } else {
             return false;

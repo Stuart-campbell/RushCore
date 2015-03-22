@@ -7,6 +7,11 @@ import java.util.List;
 import co.uk.rushorm.core.exceptions.RushLimitRequiredForOffsetException;
 import co.uk.rushorm.core.implementation.ReflectionUtils;
 import co.uk.rushorm.core.implementation.RushSqlUtils;
+import co.uk.rushorm.core.search.RushOrderBy;
+import co.uk.rushorm.core.search.RushWhere;
+import co.uk.rushorm.core.search.RushWhereChild;
+import co.uk.rushorm.core.search.RushWhereHasChild;
+import co.uk.rushorm.core.search.RushWhereStatement;
 
 /**
  * Created by Stuart on 14/12/14.
@@ -15,132 +20,11 @@ public class RushSearch {
 
     private static final String WHERE_TEMPLATE = "SELECT * from %s %s %s %s %s %s;";
 
-    private static final String JOIN = "JOIN %s on (%s." + RushSqlUtils.RUSH_ID + "=%s.parent)";
-    private static final String JOIN_CHILD = "JOIN %s on (%s." + RushSqlUtils.RUSH_ID + "=%s.child)";
+    private final List<RushWhere> whereStatements = new ArrayList<>();
+    private final List<RushOrderBy> orderStatements = new ArrayList<>();
 
-    private final List<Where> whereStatements = new ArrayList<>();
-    private final List<OrderBy> orderStatements = new ArrayList<>();
-
-    private StringBuilder joinString = new StringBuilder();
     private Integer limit;
     private Integer offset;
-
-    private class OrderBy {
-        private final String field;
-        private final String order;
-        private OrderBy(String field, String order) {
-            this.field = field;
-            this.order = order;
-        }
-
-        private String getStatement(){
-            return field + " " + order;
-        }
-
-        @Override
-        public String toString() {
-            return "{\"field\":\"" + field + "\"," +
-                    "\"order\":\"" + order + "\"}";
-        }
-    }
-
-    private class WhereHasChild extends Where {
-        private final String field;
-        private final String id;
-        private final Class<? extends Rush> clazz;
-        private final String modifier;
-
-        private WhereHasChild(String field, String id, Class<? extends Rush> clazz, String modifier) {
-            this.field = field;
-            this.id = id;
-            this.clazz = clazz;
-            this.modifier = modifier;
-        }
-
-        protected String getStatement(Class<? extends Rush> parentClazz){
-            String joinTable = ReflectionUtils.joinTableNameForClass(parentClazz, clazz, field, RushCore.getInstance().getAnnotationCache());
-            String parentTable = ReflectionUtils.tableNameForClass(parentClazz, RushCore.getInstance().getAnnotationCache());
-            joinString.append("\n").append(String.format(JOIN, joinTable, parentTable, joinTable));
-            return joinTable + ".child" + modifier + "'" + id + "'";
-        }
-
-        @Override
-        public String toString() {
-            return "{\"field\":\"" + field + "\"," +
-                    "\"modifier\":\"" + modifier + "\"," +
-                    "\"id\":\"" + id + "\"," +
-                    "\"class\":\"" + RushCore.getInstance().getAnnotationCache().get(clazz).getSerializationName() + "\"," +
-                    "\"type\":\"whereParent\"}";
-        }
-    }
-
-    private class WhereChild extends Where {
-        private final String field;
-        private final String id;
-        private final Class<? extends Rush> clazz;
-        private final String modifier;
-
-        private WhereChild(String field, String id, Class<? extends Rush> clazz, String modifier) {
-            this.field = field;
-            this.id = id;
-            this.clazz = clazz;
-            this.modifier = modifier;
-        }
-
-        protected String getStatement(Class<? extends Rush> childClazz){
-            String joinTable = ReflectionUtils.joinTableNameForClass(clazz, childClazz, field, RushCore.getInstance().getAnnotationCache());
-            String parentTable = ReflectionUtils.tableNameForClass(childClazz, RushCore.getInstance().getAnnotationCache());
-            joinString.append("\n").append(String.format(JOIN_CHILD, joinTable, parentTable, joinTable));
-            return joinTable + ".parent" + modifier + "'" + id + "'";
-        }
-
-        @Override
-        public String toString() {
-            return "{\"field\":\"" + field + "\"," +
-                    "\"modifier\":\"" + modifier + "\"," +
-                    "\"id\":\"" + id + "\"," +
-                    "\"class\":\"" + RushCore.getInstance().getAnnotationCache().get(clazz).getSerializationName() + "\"," +
-                    "\"type\":\"whereChild\"}";
-        }
-    }
-
-    private class WhereStatement extends Where {
-        private final String field;
-        private final String modifier;
-        private final String value;
-
-        private WhereStatement(String field, String modifier, String value) {
-            super(field + modifier + value);
-            this.field = field;
-            this.modifier = modifier;
-            this.value = value;
-        }
-
-        @Override
-        public String toString() {
-            return "{\"field\":\"" + field + "\"," +
-                    "\"modifier\":\"" + modifier + "\"," +
-                    "\"value\":\"" + value + "\"," +
-                    "\"type\":\"whereStatement\"}";
-        }
-    }
-
-    private class Where {
-        private String element;
-        private Where(){}
-        private Where(String string){
-            element = string;
-        }
-        protected String getStatement(Class<? extends Rush> parentClazz){
-            return element;
-        }
-
-        @Override
-        public String toString() {
-            return "{\"element\":\"" + element + "\"," +
-                    "\"type\":\"where\"}";
-        }
-    }
 
     public <T extends Rush> T findSingle(Class<T> clazz) {
         List<T> results = find(clazz);
@@ -156,14 +40,14 @@ public class RushSearch {
     }
 
     private String buildSql(Class<? extends Rush> clazz) {
-        joinString = new StringBuilder();
+        StringBuilder joinString = new StringBuilder();
         StringBuilder whereString = new StringBuilder();
         for(int i = 0; i < whereStatements.size(); i ++) {
             if(i < 1){
                 whereString.append("\nWHERE ");
             }
-            Where where = whereStatements.get(i);
-            whereString.append(where.getStatement(clazz));
+            RushWhere where = whereStatements.get(i);
+            whereString.append(where.getStatement(clazz, joinString));
         }
 
         StringBuilder order = new StringBuilder();
@@ -189,28 +73,27 @@ public class RushSearch {
         return String.format(WHERE_TEMPLATE, ReflectionUtils.tableNameForClass(clazz, RushCore.getInstance().getAnnotationCache()), joinString.toString(), whereString.toString(), order.toString(), limit, offset);
     }
 
-
     public RushSearch whereId(String id) {
         return whereEqual(RushSqlUtils.RUSH_ID, id);
     }
 
     public RushSearch and(){
-        whereStatements.add(new Where(" AND "));
+        whereStatements.add(new RushWhere(" AND "));
         return this;
     }
 
     public RushSearch or(){
-        whereStatements.add(new Where(" OR "));
+        whereStatements.add(new RushWhere(" OR "));
         return this;
     }
 
     public RushSearch startGroup(){
-        whereStatements.add(new Where("("));
+        whereStatements.add(new RushWhere("("));
         return this;
     }
 
     public RushSearch endGroup(){
-        whereStatements.add(new Where(")"));
+        whereStatements.add(new RushWhere(")"));
         return this;
     }
 
@@ -312,37 +195,37 @@ public class RushSearch {
 
 
     public RushSearch whereEqual(String field, Rush value) {
-        whereStatements.add(new WhereHasChild(field, value.getId(), value.getClass(), "="));
+        whereStatements.add(new RushWhereHasChild(field, value.getId(), value.getClass(), "="));
         return this;
     }
 
     public RushSearch whereNotEqual(String field, Rush value) {
-        whereStatements.add(new WhereHasChild(field, value.getId(), value.getClass(), "<>"));
+        whereStatements.add(new RushWhereHasChild(field, value.getId(), value.getClass(), "<>"));
         return this;
     }
 
     public RushSearch whereChildOf(Rush value, String field) {
-        whereStatements.add(new WhereChild(field, value.getId(), value.getClass(), "="));
+        whereStatements.add(new RushWhereChild(field, value.getId(), value.getClass(), "="));
         return this;
     }
 
     public RushSearch whereNotChildOf(Rush value, String field) {
-        whereStatements.add(new WhereChild(field, value.getId(), value.getClass(), "<>"));
+        whereStatements.add(new RushWhereChild(field, value.getId(), value.getClass(), "<>"));
         return this;
     }
 
     private RushSearch where(String field, String modifier, String value) {
-        whereStatements.add(new WhereStatement(field, modifier, value));
+        whereStatements.add(new RushWhereStatement(field, modifier, value));
         return this;
     }
 
     public RushSearch orderDesc(String field){
-        orderStatements.add(new OrderBy(field, "DESC"));
+        orderStatements.add(new RushOrderBy(field, "DESC"));
         return this;
     }
 
     public RushSearch orderAsc(String field){
-        orderStatements.add(new OrderBy(field, "ASC"));
+        orderStatements.add(new RushOrderBy(field, "ASC"));
         return this;
     }
 
@@ -357,6 +240,22 @@ public class RushSearch {
         }
         this.offset = offset;
         return this;
+    }
+
+    public List<RushWhere> getWhereStatements() {
+        return whereStatements;
+    }
+
+    public List<RushOrderBy> getOrderStatements() {
+        return orderStatements;
+    }
+
+    public Integer getLimit() {
+        return limit;
+    }
+
+    public Integer getOffset() {
+        return offset;
     }
 
     private static final String JSON_TEMPLATE = "{\"limit\":%s," +
