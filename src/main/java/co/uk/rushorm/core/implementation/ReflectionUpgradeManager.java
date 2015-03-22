@@ -255,7 +255,7 @@ public class ReflectionUpgradeManager implements RushUpgradeManager {
         List<String> names = new ArrayList<>();
         names.add(ReflectionUtils.tableNameForClass(clazz, annotationCache));
         if(clazz.isAnnotationPresent(RushRenamed.class)){
-            RushRenamed rushRenamed = (RushRenamed) clazz.getAnnotation(RushRenamed.class);
+            RushRenamed rushRenamed = clazz.getAnnotation(RushRenamed.class);
             for(String name : rushRenamed.names()) {
                 names.add(ReflectionUtils.tableNameForClass(name));
             }

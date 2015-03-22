@@ -331,7 +331,7 @@ public class RushCore {
     }
     
     private void loadAnnotationCache(RushClassFinder rushClassFinder) {
-        for(Class clazz : rushClassFinder.findClasses(rushConfig)) {
+        for(Class<? extends Rush> clazz : rushClassFinder.findClasses(rushConfig)) {
             List<Field> fields = new ArrayList<>();
             ReflectionUtils.getAllFields(fields, clazz);
             annotationCache.put(clazz, new RushAnnotationCache(clazz, fields, rushConfig));
