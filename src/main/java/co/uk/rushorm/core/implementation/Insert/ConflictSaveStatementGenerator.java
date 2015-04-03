@@ -1,4 +1,4 @@
-package co.uk.rushorm.core.implementation;
+package co.uk.rushorm.core.implementation.Insert;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -14,14 +14,16 @@ import co.uk.rushorm.core.RushConflictSaveStatementGenerator;
 import co.uk.rushorm.core.RushMetaData;
 import co.uk.rushorm.core.RushSaveStatementGeneratorCallback;
 import co.uk.rushorm.core.RushStringSanitizer;
+import co.uk.rushorm.core.implementation.ReflectionUtils;
+import co.uk.rushorm.core.implementation.RushSqlUtils;
 
 /**
  * Created by Stuart on 17/02/15.
  */
 public class ConflictSaveStatementGenerator extends ReflectionSaveStatementGenerator implements RushConflictSaveStatementGenerator {
 
-    public ConflictSaveStatementGenerator(RushConfig rushConfig) {
-        super(rushConfig);
+    public ConflictSaveStatementGenerator(RushSqlInsertGenerator rushSqlInsertGenerator) {
+        super(rushSqlInsertGenerator);
     }
 
     @Override

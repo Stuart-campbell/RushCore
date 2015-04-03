@@ -1,4 +1,4 @@
-package co.uk.rushorm.core.implementation;
+package co.uk.rushorm.core.implementation.Insert;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -14,48 +14,25 @@ import co.uk.rushorm.core.RushMetaData;
 import co.uk.rushorm.core.RushSaveStatementGenerator;
 import co.uk.rushorm.core.RushSaveStatementGeneratorCallback;
 import co.uk.rushorm.core.RushStringSanitizer;
+import co.uk.rushorm.core.implementation.ReflectionUtils;
 
 /**
  * Created by stuartc on 11/12/14.
  */
 public class ReflectionSaveStatementGenerator implements RushSaveStatementGenerator {
 
-    /*** Save ***/
-    private class BasicJoin {
-        private final String table;
-        private final Rush parent;
-        private final Rush child;
-
-        private BasicJoin(String table, Rush parent, Rush child) {
-            this.table = table;
-            this.parent = parent;
-            this.child = child;
-        }
-    }
-
-    protected class BasicUpdate {
-        protected final List<String> values;
-        protected final Rush object;
-        protected final RushMetaData rushMetaData;
-
-        private BasicUpdate(List<String> values, Rush object, RushMetaData rushMetaData) {
-            this.values = values;
-            this.object = object;
-            this.rushMetaData = rushMetaData;
-        }
-    }
 
     private void addJoin(Map<String, List<BasicJoin>> joins, BasicJoin basicJoin) {
-        if(!joins.containsKey(basicJoin.table)) {
-            joins.put(basicJoin.table, new ArrayList<BasicJoin>());
+        if(!joins.containsKey(basicJoin.getTable())) {
+            joins.put(basicJoin.getTable(), new ArrayList<BasicJoin>());
         }
-        joins.get(basicJoin.table).add(basicJoin);
+        joins.get(basicJoin.getTable()).add(basicJoin);
     }
 
-    private final RushConfig rushConfig;
-    
-    public ReflectionSaveStatementGenerator(RushConfig rushConfig) {
-        this.rushConfig = rushConfig;
+    private final RushSqlInsertGenerator rushSqlInsertGenerator;
+
+    public ReflectionSaveStatementGenerator(RushSqlInsertGenerator rushSqlInsertGenerator) {
+        this.rushSqlInsertGenerator = rushSqlInsertGenerator;
     }
 
     @Override
@@ -74,8 +51,8 @@ public class ReflectionSaveStatementGenerator implements RushSaveStatementGenera
         }
 
         ReflectionUtils.deleteManyJoins(joinDeletes, saveCallback);
-        createOrUpdateObjects(updateValues, columns, annotationCache, saveCallback);
 
+        createOrUpdateObjects(updateValues, columns, annotationCache, saveCallback);
         createManyJoins(joinValues, saveCallback);
 
     }
@@ -127,7 +104,7 @@ public class ReflectionSaveStatementGenerator implements RushSaveStatementGenera
                         joinDeletesMap.get(joinTableName).add(rush.getId());
                     }
                     for(BasicJoin join : joins) {
-                        generateSaveOrUpdate(join.child, rushObjects, annotationCache, rushStringSanitizer, rushColumns, updateValuesMap, columnsMap, joinDeletesMap, joinValuesMap, saveCallback);
+                        generateSaveOrUpdate(join.getChild(), rushObjects, annotationCache, rushStringSanitizer, rushColumns, updateValuesMap, columnsMap, joinDeletesMap, joinValuesMap, saveCallback);
                         addJoin(joinValuesMap, join);
                     }
                 }
@@ -185,109 +162,12 @@ public class ReflectionSaveStatementGenerator implements RushSaveStatementGenera
         return null;
     }
 
+
     private void createManyJoins(Map<String, List<BasicJoin>> joinValues, final RushSaveStatementGeneratorCallback saveCallback) {
-
-        for (final Map.Entry<String, List<BasicJoin>> entry : joinValues.entrySet()) {
-            final StringBuilder columnsString = new StringBuilder();
-            final List<BasicJoin> values = entry.getValue();
-
-            ReflectionUtils.doLoop(values.size(), ReflectionUtils.GROUP_SIZE, new ReflectionUtils.LoopCallBack() {
-                @Override
-                public void start() {
-                    columnsString.delete(0, columnsString.length());
-                }
-
-                @Override
-                public void actionAtIndex(int index) {
-                    columnsString.append("('")
-                            .append(values.get(index).parent.getId())
-                            .append("','")
-                            .append(values.get(index).child.getId())
-                            .append("')");
-                }
-
-                @Override
-                public void join() {
-                    columnsString.append(", ");
-                }
-
-                @Override
-                public void doAction() {
-                    String sql = String.format(RushSqlUtils.MULTIPLE_INSERT_JOIN_TEMPLATE, entry.getKey(),
-                            columnsString.toString());
-                    saveCallback.createdOrUpdateStatement(sql);
-                }
-            });
-        }
+        rushSqlInsertGenerator.createManyJoins(joinValues, saveCallback);
     }
 
     protected void createOrUpdateObjects(Map<Class<? extends Rush>, List<BasicUpdate>> valuesMap, final Map<Class<? extends Rush>, List<String>> columnsMap, final Map<Class<? extends Rush>, AnnotationCache> annotationCache, final RushSaveStatementGeneratorCallback saveCallback) {
-
-        for (final Map.Entry<Class<? extends Rush>, List<BasicUpdate>> entry : valuesMap.entrySet()) {
-
-            StringBuilder columnsBuilder = new StringBuilder();
-            columnsBuilder.append(RushSqlUtils.RUSH_ID)
-                    .append(",")
-                    .append(RushSqlUtils.RUSH_CREATED)
-                    .append(",")
-                    .append(RushSqlUtils.RUSH_UPDATED)
-                    .append(",")
-                    .append(RushSqlUtils.RUSH_VERSION)
-                    .append(commaSeparated(columnsMap.get(entry.getKey())));
-
-            final String columns = columnsBuilder.toString();
-
-            final StringBuilder valuesString = new StringBuilder();
-            final List<BasicUpdate> creates = entry.getValue();
-
-            ReflectionUtils.doLoop(creates.size(), ReflectionUtils.GROUP_SIZE, new ReflectionUtils.LoopCallBack() {
-                @Override
-                public void start() {
-                    valuesString.delete(0, valuesString.length());
-                }
-
-                @Override
-                public void actionAtIndex(int index) {
-
-                    RushMetaData rushMetaData = creates.get(index).rushMetaData;
-                    rushMetaData.save();
-
-                    valuesString.append("('")
-                            .append(rushMetaData.getId())
-                            .append("',")
-                            .append(rushMetaData.getCreated())
-                            .append(",")
-                            .append(rushMetaData.getUpdated())
-                            .append(",")
-                            .append(rushMetaData.getVersion())
-                            .append(commaSeparated(creates.get(index).values))
-                            .append(")");
-                }
-
-                @Override
-                public void join() {
-                    valuesString.append(", ");
-                }
-
-                @Override
-                public void doAction() {
-                    String sql = String.format(rushConfig.usingMySql() ? RushSqlUtils.MULTIPLE_INSERT_UPDATE_TEMPLATE_MYSQL : RushSqlUtils.MULTIPLE_INSERT_UPDATE_TEMPLATE_SQLITE,
-                            ReflectionUtils.tableNameForClass(entry.getKey(), annotationCache),
-                            columns,
-                            valuesString.toString());
-
-                    saveCallback.createdOrUpdateStatement(sql);
-                }
-            });
-        }
-    }
-
-    private String commaSeparated(List<String> values) {
-        StringBuilder string = new StringBuilder();
-        for (int i = 0; i < values.size(); i++) {
-            string.append(",")
-                    .append(values.get(i));
-        }
-        return string.toString();
+        rushSqlInsertGenerator.createOrUpdateObjects(valuesMap, columnsMap, annotationCache, saveCallback);
     }
 }

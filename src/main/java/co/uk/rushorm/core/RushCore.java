@@ -9,10 +9,13 @@ import java.util.WeakHashMap;
 
 import co.uk.rushorm.core.exceptions.RushCoreNotInitializedException;
 import co.uk.rushorm.core.exceptions.RushTableMissingEmptyConstructorException;
-import co.uk.rushorm.core.implementation.ConflictSaveStatementGenerator;
+import co.uk.rushorm.core.implementation.Insert.ConflictSaveStatementGenerator;
+import co.uk.rushorm.core.implementation.Insert.RushSqlInsertGenerator;
+import co.uk.rushorm.core.implementation.Insert.SqlBulkInsertGenerator;
+import co.uk.rushorm.core.implementation.Insert.SqlSingleInsertGenerator;
 import co.uk.rushorm.core.implementation.ReflectionClassLoader;
 import co.uk.rushorm.core.implementation.ReflectionDeleteStatementGenerator;
-import co.uk.rushorm.core.implementation.ReflectionSaveStatementGenerator;
+import co.uk.rushorm.core.implementation.Insert.ReflectionSaveStatementGenerator;
 import co.uk.rushorm.core.implementation.ReflectionTableStatementGenerator;
 import co.uk.rushorm.core.implementation.ReflectionUpgradeManager;
 import co.uk.rushorm.core.implementation.ReflectionUtils;
@@ -54,8 +57,10 @@ public class RushCore {
 
         RushUpgradeManager rushUpgradeManager = new ReflectionUpgradeManager(logger, rushConfig);
         Map<Class<? extends Rush>, AnnotationCache> annotationCache = new HashMap<>();
-        RushSaveStatementGenerator saveStatementGenerator = new ReflectionSaveStatementGenerator(rushConfig);
-        RushConflictSaveStatementGenerator conflictSaveStatementGenerator = new ConflictSaveStatementGenerator(rushConfig);
+        RushSqlInsertGenerator rushSqlInsertGenerator = rushConfig.userBulkInsert() ? new SqlBulkInsertGenerator(rushConfig) : new SqlSingleInsertGenerator(rushConfig);
+
+        RushSaveStatementGenerator saveStatementGenerator = new ReflectionSaveStatementGenerator(rushSqlInsertGenerator);
+        RushConflictSaveStatementGenerator conflictSaveStatementGenerator = new ConflictSaveStatementGenerator(rushSqlInsertGenerator);
         RushDeleteStatementGenerator deleteStatementGenerator = new ReflectionDeleteStatementGenerator();
         RushTableStatementGenerator rushTableStatementGenerator = new ReflectionTableStatementGenerator(rushConfig);
         RushClassLoader rushClassLoader = new ReflectionClassLoader();

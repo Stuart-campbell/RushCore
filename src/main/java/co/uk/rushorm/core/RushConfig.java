@@ -10,4 +10,5 @@ public interface RushConfig {
     public boolean log();
     public boolean requireTableAnnotation();
     public boolean usingMySql();
+    public boolean userBulkInsert();
 }
