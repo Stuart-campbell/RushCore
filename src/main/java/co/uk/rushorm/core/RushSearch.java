@@ -19,6 +19,7 @@ import co.uk.rushorm.core.search.RushWhereStatement;
 public class RushSearch {
 
     private static final String WHERE_TEMPLATE = "SELECT * from %s %s %s %s %s %s;";
+    private static final String COUNT_TEMPLATE = "SELECT COUNT(*) from %s %s %s;";
 
     private final List<RushWhere> whereStatements = new ArrayList<>();
     private final List<RushOrderBy> orderStatements = new ArrayList<>();
@@ -37,6 +38,10 @@ public class RushSearch {
 
     public <T extends Rush> List<T> find(Class<T> clazz) {
         return RushCore.getInstance().load(clazz, buildSql(clazz));
+    }
+
+    public <T extends Rush> long count(Class<T> clazz) {
+        return RushCore.getInstance().count(buildCountSql(clazz));
     }
 
     private String buildSql(Class<? extends Rush> clazz) {
@@ -71,6 +76,19 @@ public class RushSearch {
         }
 
         return String.format(WHERE_TEMPLATE, ReflectionUtils.tableNameForClass(clazz, RushCore.getInstance().getAnnotationCache()), joinString.toString(), whereString.toString(), order.toString(), limit, offset);
+    }
+
+    private String buildCountSql(Class<? extends Rush> clazz) {
+        StringBuilder joinString = new StringBuilder();
+        StringBuilder whereString = new StringBuilder();
+        for(int i = 0; i < whereStatements.size(); i ++) {
+            if(i < 1){
+                whereString.append("\nWHERE ");
+            }
+            RushWhere where = whereStatements.get(i);
+            whereString.append(where.getStatement(clazz, joinString));
+        }
+        return String.format(COUNT_TEMPLATE, ReflectionUtils.tableNameForClass(clazz, RushCore.getInstance().getAnnotationCache()), joinString.toString(), whereString.toString());
     }
 
     public RushSearch whereId(String id) {
@@ -205,12 +223,20 @@ public class RushSearch {
     }
 
     public RushSearch whereChildOf(Rush value, String field) {
-        whereStatements.add(new RushWhereChild(field, value.getId(), value.getClass(), "="));
+        return whereChildOf(value.getClass(), field, value.getId());
+    }
+
+    public RushSearch whereChildOf(Class<? extends Rush> clazz, String field, String id) {
+        whereStatements.add(new RushWhereChild(field, id, clazz, "="));
         return this;
     }
 
     public RushSearch whereNotChildOf(Rush value, String field) {
-        whereStatements.add(new RushWhereChild(field, value.getId(), value.getClass(), "<>"));
+        return whereNotChildOf(value.getClass(), field, value.getId());
+    }
+
+    public RushSearch whereNotChildOf(Class<? extends Rush> clazz, String field, String id) {
+        whereStatements.add(new RushWhereChild(field, id, clazz, "<>"));
         return this;
     }
 
@@ -256,6 +282,16 @@ public class RushSearch {
 
     public Integer getOffset() {
         return offset;
+    }
+
+    public RushSearch setLimit(Integer limit) {
+        this.limit = limit;
+        return this;
+    }
+
+    public RushSearch setOffset(Integer offset) {
+        this.offset = offset;
+        return this;
     }
 
     private static final String JSON_TEMPLATE = "{\"limit\":%s," +

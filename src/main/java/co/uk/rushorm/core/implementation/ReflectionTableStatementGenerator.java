@@ -9,6 +9,7 @@ import co.uk.rushorm.core.AnnotationCache;
 import co.uk.rushorm.core.Rush;
 import co.uk.rushorm.core.RushColumns;
 import co.uk.rushorm.core.RushConfig;
+import co.uk.rushorm.core.RushListField;
 import co.uk.rushorm.core.annotations.RushIgnore;
 import co.uk.rushorm.core.annotations.RushList;
 import co.uk.rushorm.core.RushTableStatementGenerator;
@@ -109,8 +110,8 @@ public class ReflectionTableStatementGenerator implements RushTableStatementGene
                 joins.add(join);
                 return null;
             }
-
         }
+
         if(rushColumns.supportsField(field)) {
             Column column = new Column();
             column.name = field.getName();

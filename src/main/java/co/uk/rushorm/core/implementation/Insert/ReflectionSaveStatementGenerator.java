@@ -9,11 +9,12 @@ import java.util.Map;
 import co.uk.rushorm.core.AnnotationCache;
 import co.uk.rushorm.core.Rush;
 import co.uk.rushorm.core.RushColumns;
-import co.uk.rushorm.core.RushConfig;
+import co.uk.rushorm.core.RushListField;
 import co.uk.rushorm.core.RushMetaData;
 import co.uk.rushorm.core.RushSaveStatementGenerator;
 import co.uk.rushorm.core.RushSaveStatementGeneratorCallback;
 import co.uk.rushorm.core.RushStringSanitizer;
+import co.uk.rushorm.core.exceptions.RushClassNotFoundException;
 import co.uk.rushorm.core.implementation.ReflectionUtils;
 
 /**
@@ -70,6 +71,10 @@ public class ReflectionSaveStatementGenerator implements RushSaveStatementGenera
         if (rushObjects.contains(rush)) {
             // Exit if object is referenced by child
             return;
+        }
+
+        if(annotationCache.get(rush.getClass()) == null) {
+            throw new RushClassNotFoundException(rush.getClass());
         }
 
         rushObjects.add(rush);
@@ -143,14 +148,22 @@ public class ReflectionSaveStatementGenerator implements RushSaveStatementGenera
         }
 
         if(annotationCache.get(rush.getClass()).getListsClasses().containsKey(field.getName())) {
+
+            if(RushListField.class.isAssignableFrom(field.getType())) {
+                // return null so that the join table is not cleared
+                return null;
+            }
+
             Class listClass = annotationCache.get(rush.getClass()).getListsClasses().get(field.getName());
             String tableName = ReflectionUtils.joinTableNameForClass(rush.getClass(), listClass, field, annotationCache);
             if (Rush.class.isAssignableFrom(listClass)) {
                 try {
-                    List<Rush> children = (List<Rush>) field.get(rush);
-                    if (children != null) {
-                        for (Rush child : children) {
-                            joins.add(new BasicJoin(tableName, rush, child));
+                    if(List.class.isAssignableFrom(field.getType())) {
+                        List<Rush> children = (List<Rush>) field.get(rush);
+                        if (children != null) {
+                            for (Rush child : children) {
+                                joins.add(new BasicJoin(tableName, rush, child));
+                            }
                         }
                     }
                 } catch (IllegalAccessException e) {

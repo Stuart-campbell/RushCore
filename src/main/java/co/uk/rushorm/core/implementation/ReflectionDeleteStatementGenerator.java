@@ -9,6 +9,7 @@ import java.util.Map;
 import co.uk.rushorm.core.AnnotationCache;
 import co.uk.rushorm.core.Rush;
 import co.uk.rushorm.core.RushDeleteStatementGenerator;
+import co.uk.rushorm.core.RushListField;
 
 /**
  * Created by Stuart on 16/02/15.
@@ -58,14 +59,18 @@ public class ReflectionDeleteStatementGenerator implements RushDeleteStatementGe
                     }
                 } else if (annotationCache.get(rush.getClass()).getListsClasses().containsKey(field.getName())) {
                     try {
-                        List<Rush> fieldChildren = (List<Rush>) field.get(rush);
-                        if (fieldChildren != null && fieldChildren.size() > 0) {
-                            joinTableName = ReflectionUtils.joinTableNameForClass(rush.getClass(), annotationCache.get(rush.getClass()).getListsClasses().get(field.getName()), field, annotationCache);
-                            if (!annotationCache.get(rush.getClass()).getDisableAutoDelete().contains(field.getName())) {
-                                for(Rush child : fieldChildren) {
-                                    generateDelete(child, annotationCache, deletes, joinDeletes, callback);
+                        if(List.class.isAssignableFrom(field.getType())) {
+                            List<Rush> fieldChildren = (List<Rush>) field.get(rush);
+                            if (fieldChildren != null && fieldChildren.size() > 0) {
+                                joinTableName = ReflectionUtils.joinTableNameForClass(rush.getClass(), annotationCache.get(rush.getClass()).getListsClasses().get(field.getName()), field, annotationCache);
+                                if (!annotationCache.get(rush.getClass()).getDisableAutoDelete().contains(field.getName())) {
+                                    for (Rush child : fieldChildren) {
+                                        generateDelete(child, annotationCache, deletes, joinDeletes, callback);
+                                    }
                                 }
                             }
+                        } else if(RushListField.class.isAssignableFrom(field.getType())) {
+                            // TODO delete values
                         }
                     } catch (IllegalAccessException e) {
                         e.printStackTrace();

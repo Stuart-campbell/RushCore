@@ -1,6 +1,7 @@
 package co.uk.rushorm.core.implementation;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -47,7 +48,8 @@ public class RushAnnotationCache implements AnnotationCache {
         disableAutoDelete = new ArrayList<>();
 
         for(Field field : fields) {
-            if(field.isAnnotationPresent(RushIgnore.class)) {
+            if(field.isAnnotationPresent(RushIgnore.class)
+                    || Modifier.isFinal(field.getModifiers())) {
                 fieldToIgnore.add(field.getName());
             } else {
                 if (field.isAnnotationPresent(RushList.class)) {
