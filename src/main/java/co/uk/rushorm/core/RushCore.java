@@ -16,6 +16,7 @@ import co.uk.rushorm.core.implementation.Insert.SqlSingleInsertGenerator;
 import co.uk.rushorm.core.implementation.ReflectionClassLoader;
 import co.uk.rushorm.core.implementation.ReflectionDeleteStatementGenerator;
 import co.uk.rushorm.core.implementation.Insert.ReflectionSaveStatementGenerator;
+import co.uk.rushorm.core.implementation.ReflectionJoinStatementGenerator;
 import co.uk.rushorm.core.implementation.ReflectionTableStatementGenerator;
 import co.uk.rushorm.core.implementation.ReflectionUpgradeManager;
 import co.uk.rushorm.core.implementation.ReflectionUtils;
@@ -62,16 +63,18 @@ public class RushCore {
         RushSaveStatementGenerator saveStatementGenerator = new ReflectionSaveStatementGenerator(rushSqlInsertGenerator);
         RushConflictSaveStatementGenerator conflictSaveStatementGenerator = new ConflictSaveStatementGenerator(rushSqlInsertGenerator);
         RushDeleteStatementGenerator deleteStatementGenerator = new ReflectionDeleteStatementGenerator();
+        RushJoinStatementGenerator rushJoinStatementGenerator = new ReflectionJoinStatementGenerator();
         RushTableStatementGenerator rushTableStatementGenerator = new ReflectionTableStatementGenerator(rushConfig);
         RushClassLoader rushClassLoader = new ReflectionClassLoader();
 
-        initialize(rushUpgradeManager, saveStatementGenerator, conflictSaveStatementGenerator, deleteStatementGenerator, rushClassFinder, rushTableStatementGenerator, statementRunner, queProvider, rushConfig, rushClassLoader, rushStringSanitizer, logger, rushObjectSerializer, rushObjectDeserializer, rushColumns, annotationCache, null);
+        initialize(rushUpgradeManager, saveStatementGenerator, conflictSaveStatementGenerator, deleteStatementGenerator, rushJoinStatementGenerator, rushClassFinder, rushTableStatementGenerator, statementRunner, queProvider, rushConfig, rushClassLoader, rushStringSanitizer, logger, rushObjectSerializer, rushObjectDeserializer, rushColumns, annotationCache, null);
     }
 
     public static void initialize(final RushUpgradeManager rushUpgradeManager,
                                   RushSaveStatementGenerator saveStatementGenerator,
                                   RushConflictSaveStatementGenerator rushConflictSaveStatementGenerator,
                                   RushDeleteStatementGenerator deleteStatementGenerator,
+                                  RushJoinStatementGenerator rushJoinStatementGenerator,
                                   RushClassFinder rushClassFinder,
                                   RushTableStatementGenerator rushTableStatementGenerator,
                                   final RushStatementRunner statementRunner,
@@ -86,7 +89,11 @@ public class RushCore {
                                   Map<Class<? extends Rush>, AnnotationCache> annotationCache,
                                   final InitializeListener initializeListener) {
 
-        rushCore = new RushCore(saveStatementGenerator, rushConflictSaveStatementGenerator, deleteStatementGenerator, statementRunner, queProvider, rushConfig, rushTableStatementGenerator, rushClassLoader, rushStringSanitizer, logger, rushObjectSerializer, rushObjectDeserializer, rushColumns, annotationCache);
+        if(rushCore != null) {
+            logger.logError("RushCore has already been initialized, make sure initialize is only called once.");
+        }
+
+        rushCore = new RushCore(saveStatementGenerator, rushConflictSaveStatementGenerator, deleteStatementGenerator, rushJoinStatementGenerator, statementRunner, queProvider, rushConfig, rushTableStatementGenerator, rushClassLoader, rushStringSanitizer, logger, rushObjectSerializer, rushObjectDeserializer, rushColumns, annotationCache);
         rushCore.loadAnnotationCache(rushClassFinder);
 
         final boolean isFirstRun = statementRunner.isFirstRun();
@@ -150,11 +157,67 @@ public class RushCore {
             @Override
             public void callback(RushQue rushQue) {
                 save(objects, rushQue);
-                if(callback != null) {
+                if (callback != null) {
                     callback.complete();
                 }
             }
         });
+    }
+
+    public void join(List<RushJoin> objects) {
+        RushQue que = queProvider.blockForNextQue();
+        join(objects, que);
+    }
+
+    public void join(final List<RushJoin> objects, final RushCallback callback) {
+        queProvider.waitForNextQue(new RushQueProvider.RushQueCallback() {
+            @Override
+            public void callback(RushQue rushQue) {
+                join(objects, rushQue);
+                if (callback != null) {
+                    callback.complete();
+                }
+            }
+        });
+    }
+
+    public void deleteJoin(List<RushJoin> objects) {
+        RushQue que = queProvider.blockForNextQue();
+        deleteJoin(objects, que);
+    }
+
+    public void deleteJoin(final List<RushJoin> objects, final RushCallback callback) {
+        queProvider.waitForNextQue(new RushQueProvider.RushQueCallback() {
+            @Override
+            public void callback(RushQue rushQue) {
+                deleteJoin(objects, rushQue);
+                if (callback != null) {
+                    callback.complete();
+                }
+            }
+        });
+    }
+
+    public void clearChildren(Class<? extends Rush> parent, String field, Class<? extends Rush> child, String id) {
+        final RushQue que = queProvider.blockForNextQue();
+        rushJoinStatementGenerator.deleteAll(parent, field, child, id, new RushJoinStatementGenerator.Callback() {
+            @Override
+            public void runSql(String sql) {
+                logger.logSql(sql);
+                statementRunner.runRaw(sql, que);
+            }
+        }, annotationCache);
+        queProvider.queComplete(que);
+    }
+
+    public long count(String sql) {
+        final RushQue que = queProvider.blockForNextQue();
+        logger.logSql(sql);
+        RushStatementRunner.ValuesCallback valuesCallback = statementRunner.runGet(sql, que);
+        List<String> results = valuesCallback.next();
+        long count = Long.parseLong(results.get(0));
+        queProvider.queComplete(que);
+        return count;
     }
 
     public <T extends Rush> List<T> load(Class<T> clazz, String sql) {
@@ -193,7 +256,7 @@ public class RushCore {
             @Override
             public void callback(RushQue rushQue) {
                 delete(objects, rushQue);
-                if(callback != null) {
+                if (callback != null) {
                     callback.complete();
                 }
             }
@@ -222,7 +285,7 @@ public class RushCore {
             @Override
             public void callback(RushQue rushQue) {
                 List<RushConflict> conflicts = saveOnlyWithoutConflict(objects, rushQue);
-                if(callback != null) {
+                if (callback != null) {
                     callback.complete(conflicts);
                 }
             }
@@ -275,6 +338,15 @@ public class RushCore {
         });
     }
 
+    public void registerObjectWithId(Rush rush, String id) {
+        RushMetaData rushMetaData = new RushMetaData(id, 0);
+        registerObjectWithMetaData(rush, rushMetaData);
+    }
+
+    public void registerObjectWithMetaData(Rush rush, RushMetaData rushMetaData) {
+        idTable.put(rush, rushMetaData);
+    }
+
     public Map<Class<? extends Rush>, AnnotationCache> getAnnotationCache() {
         return annotationCache;
     }
@@ -291,6 +363,7 @@ public class RushCore {
     private final RushSaveStatementGenerator saveStatementGenerator;
     private final RushConflictSaveStatementGenerator rushConflictSaveStatementGenerator;
     private final RushDeleteStatementGenerator deleteStatementGenerator;
+    private final RushJoinStatementGenerator rushJoinStatementGenerator;
     private final RushStatementRunner statementRunner;
     private final RushQueProvider queProvider;
     private final RushConfig rushConfig;
@@ -307,7 +380,7 @@ public class RushCore {
     private RushCore(RushSaveStatementGenerator saveStatementGenerator,
                      RushConflictSaveStatementGenerator rushConflictSaveStatementGenerator,
                      RushDeleteStatementGenerator deleteStatementGenerator,
-                     RushStatementRunner statementRunner,
+                     RushJoinStatementGenerator rushJoinStatementGenerator, RushStatementRunner statementRunner,
                      RushQueProvider queProvider,
                      RushConfig rushConfig,
                      RushTableStatementGenerator rushTableStatementGenerator,
@@ -322,6 +395,7 @@ public class RushCore {
         this.saveStatementGenerator = saveStatementGenerator;
         this.rushConflictSaveStatementGenerator = rushConflictSaveStatementGenerator;
         this.deleteStatementGenerator = deleteStatementGenerator;
+        this.rushJoinStatementGenerator = rushJoinStatementGenerator;
         this.statementRunner = statementRunner;
         this.queProvider = queProvider;
         this.rushConfig = rushConfig;
@@ -381,7 +455,7 @@ public class RushCore {
         saveStatementGenerator.generateSaveOrUpdate(objects, annotationCache, rushStringSanitizer, rushColumns, new RushSaveStatementGeneratorCallback() {
             @Override
             public void addRush(Rush rush, RushMetaData rushMetaData) {
-                RushCore.this.addRush(rush, rushMetaData);
+                registerObjectWithMetaData(rush, rushMetaData);
             }
 
             @Override
@@ -422,7 +496,7 @@ public class RushCore {
 
             @Override
             public void addRush(Rush rush, RushMetaData rushMetaData) {
-                RushCore.this.addRush(rush, rushMetaData);
+                registerObjectWithMetaData(rush, rushMetaData);
             }
 
             @Override
@@ -483,7 +557,7 @@ public class RushCore {
 
             @Override
             public void didLoadObject(Rush rush, RushMetaData rushMetaData) {
-                addRush(rush, rushMetaData);
+                registerObjectWithMetaData(rush, rushMetaData);
             }
         });
         values.close();
@@ -494,11 +568,31 @@ public class RushCore {
         return objects;
     }
 
-    private void addRush(Rush rush, RushMetaData rushMetaData) {
-        idTable.put(rush, rushMetaData);
-    }
-
     private void removeRush(Rush rush) {
         idTable.remove(rush);
+    }
+
+    private void join(List<RushJoin> objects, final RushQue que) {
+        statementRunner.startTransition(que);
+        rushJoinStatementGenerator.createJoins(objects, new RushJoinStatementGenerator.Callback() {
+            @Override
+            public void runSql(String sql) {
+                logger.logSql(sql);
+                statementRunner.runRaw(sql, que);
+            }
+        }, annotationCache);
+        queProvider.queComplete(que);
+    }
+
+    private void deleteJoin(List<RushJoin> objects, final RushQue que) {
+        statementRunner.startTransition(que);
+        rushJoinStatementGenerator.deleteJoins(objects, new RushJoinStatementGenerator.Callback() {
+            @Override
+            public void runSql(String sql) {
+                logger.logSql(sql);
+                statementRunner.runRaw(sql, que);
+            }
+        }, annotationCache);
+        queProvider.queComplete(que);
     }
 }

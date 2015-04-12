@@ -12,7 +12,9 @@ import co.uk.rushorm.core.AnnotationCache;
 import co.uk.rushorm.core.Rush;
 import co.uk.rushorm.core.RushClassLoader;
 import co.uk.rushorm.core.RushColumns;
+import co.uk.rushorm.core.RushListField;
 import co.uk.rushorm.core.RushMetaData;
+import co.uk.rushorm.core.RushPageList;
 import co.uk.rushorm.core.RushStatementRunner;
 
 /**
@@ -109,7 +111,22 @@ public class ReflectionClassLoader implements RushClassLoader {
         if (Rush.class.isAssignableFrom(field.getType())) {
             clazz = field.getType();
         } else if(annotationCache.get(object.getClass()).getListsClasses().containsKey(field.getName())){
-            clazz = annotationCache.get(object.getClass()).getListsClasses().get(field.getName());
+            if(RushListField.class.isAssignableFrom(field.getType())) {
+                Class listType = annotationCache.get(object.getClass()).getListsTypes().get(field.getName());
+                if(!RushListField.class.isAssignableFrom(listType)) {
+                    listType = RushPageList.class;
+                }
+                try {
+                    Constructor<? extends List> constructor = listType.getConstructor();
+                    RushListField rushListField = (RushListField)constructor.newInstance();
+                    rushListField.setDetails(object, field.getName(), annotationCache.get(object.getClass()).getListsClasses().get(field.getName()));
+                    field.set(object, rushListField);
+                } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException | InstantiationException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                clazz = annotationCache.get(object.getClass()).getListsClasses().get(field.getName());
+            }
         }
         if(clazz != null) {
             if(!joins.containsKey(clazz)) {

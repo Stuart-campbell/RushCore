@@ -14,5 +14,5 @@ import co.uk.rushorm.core.Rush;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface RushList {
     public Class<? extends Rush> classType();
-    public Class<? extends List> listType() default ArrayList.class;
+    public Class listType() default ArrayList.class;
 }

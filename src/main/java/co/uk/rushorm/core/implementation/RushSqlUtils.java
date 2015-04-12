@@ -53,6 +53,12 @@ public class RushSqlUtils {
     public static final String MULTIPLE_DELETE_TEMPLATE = "DELETE FROM %s \n" +
             "WHERE %s;";
 
+    public static final String DELETE_JOIN_TEMPLATE = "DELETE FROM %s " +
+            "WHERE parent='%s' AND child='%s';";
+
+    public static final String DELETE_ALL_JOIN_TEMPLATE = "DELETE FROM %s " +
+            "WHERE parent='%s'";
+
     // Insert
     public static final String MULTIPLE_INSERT_UPDATE_TEMPLATE_MYSQL = "REPLACE INTO %s " +
             "(%s)\n" +
@@ -65,6 +71,10 @@ public class RushSqlUtils {
     public static final String MULTIPLE_INSERT_JOIN_TEMPLATE = "INSERT INTO %s " +
                             "(parent, child)\n" +
                             "VALUES %s;";
+
+    public static final String INSERT_JOIN_TEMPLATE = "INSERT INTO %s " +
+            "(parent, child)\n" +
+            "VALUES ('%s', '%s');";
 
     // Meta data
     public static final String COLUMNS_INFO_SQLITE = "PRAGMA table_info(%s)";
