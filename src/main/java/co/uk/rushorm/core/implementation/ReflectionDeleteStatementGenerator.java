@@ -29,6 +29,28 @@ public class ReflectionDeleteStatementGenerator implements RushDeleteStatementGe
         deleteMany(deletes, callback);
     }
 
+    @Override
+    public void generateDeleteAll(Class<? extends Rush> clazz, Map<Class<? extends Rush>, AnnotationCache> annotationCache, Callback deleteCallback) {
+        List<Field> fields = new ArrayList<>();
+        ReflectionUtils.getAllFields(fields, clazz);
+
+        for (Field field : fields) {
+            if (!annotationCache.get(clazz).getFieldToIgnore().contains(field.getName())) {
+                String joinTableName = null;
+                if (Rush.class.isAssignableFrom(field.getType())) {
+                    joinTableName = ReflectionUtils.joinTableNameForClass(clazz, (Class<? extends Rush>) field.getType(), field, annotationCache);
+                } else if (annotationCache.get(clazz).getListsClasses().containsKey(field.getName())) {
+                    joinTableName = ReflectionUtils.joinTableNameForClass(clazz, annotationCache.get(clazz).getListsClasses().get(field.getName()), field, annotationCache);
+                }
+                if(joinTableName != null) {
+                    deleteCallback.deleteStatement("DELETE FROM " + joinTableName + ";");
+                }
+            }
+        }
+        deleteCallback.deleteStatement("DELETE FROM " + ReflectionUtils.tableNameForClass(clazz, annotationCache) + ";");
+        deleteCallback.deleteStatement("VACUUM;");
+    }
+
     public void generateDelete(Rush rush, Map<Class<? extends Rush>, AnnotationCache> annotationCache, Map<String, List<String>> deletes, Map<String, List<String>> joinDeletes, RushDeleteStatementGenerator.Callback callback) {
 
         if (rush.getId() == null) {

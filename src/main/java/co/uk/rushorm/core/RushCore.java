@@ -123,6 +123,12 @@ public class RushCore {
         return rushCore;
     }
 
+    public void clearDatabase(){
+        for (Map.Entry<Class<? extends Rush>, AnnotationCache> entry : annotationCache.entrySet()) {
+            deleteAll(entry.getKey());
+        }
+    }
+
     public RushMetaData getMetaData(Rush rush) {
         return idTable.get(rush);
     }
@@ -216,6 +222,7 @@ public class RushCore {
         RushStatementRunner.ValuesCallback valuesCallback = statementRunner.runGet(sql, que);
         List<String> results = valuesCallback.next();
         long count = Long.parseLong(results.get(0));
+        valuesCallback.close();
         queProvider.queComplete(que);
         return count;
     }
@@ -261,6 +268,25 @@ public class RushCore {
                 }
             }
         });
+    }
+
+    public void deleteAll(Class<? extends Rush> clazz) {
+        final RushQue que = queProvider.blockForNextQue();
+        deleteStatementGenerator.generateDeleteAll(clazz, annotationCache, new RushDeleteStatementGenerator.Callback() {
+            @Override
+            public void removeRush(Rush rush) { }
+            @Override
+            public void deleteStatement(String sql) {
+                logger.logSql(sql);
+                statementRunner.runRaw(sql, que);
+            }
+
+            @Override
+            public RushMetaData getMetaData(Rush rush) {
+                return null;
+            }
+        });
+        queProvider.queComplete(que);
     }
 
     public List<RushConflict> saveOnlyWithoutConflict(Rush rush) {
@@ -581,6 +607,7 @@ public class RushCore {
                 statementRunner.runRaw(sql, que);
             }
         }, annotationCache);
+        statementRunner.endTransition(que);
         queProvider.queComplete(que);
     }
 
@@ -593,6 +620,7 @@ public class RushCore {
                 statementRunner.runRaw(sql, que);
             }
         }, annotationCache);
+        statementRunner.endTransition(que);
         queProvider.queComplete(que);
     }
 }

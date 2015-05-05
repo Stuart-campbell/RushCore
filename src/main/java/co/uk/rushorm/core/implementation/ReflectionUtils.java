@@ -19,7 +19,7 @@ public class ReflectionUtils {
 
     public static String tableNameForClass(Class<? extends Rush> clazz, Map<Class<? extends Rush>, AnnotationCache> annotationCache) {
         String name = annotationCache.get(clazz).getTableName();
-        return tableNameForClass(name);
+        return annotationCache.get(clazz).prefixTable() ? tableNameForClass(name) : name;
     }
 
     public static String tableNameForClass(String name) {

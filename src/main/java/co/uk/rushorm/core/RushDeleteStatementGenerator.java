@@ -14,5 +14,6 @@ public interface RushDeleteStatementGenerator {
     }
 
     public void generateDelete(List<? extends Rush> objects, Map<Class<? extends Rush>, AnnotationCache> annotationCache, Callback deleteCallback);
+    public void generateDeleteAll(Class<? extends Rush> clazz, Map<Class<? extends Rush>, AnnotationCache> annotationCache, Callback deleteCallback);
 
 }

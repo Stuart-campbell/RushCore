@@ -13,5 +13,5 @@ public interface AnnotationCache {
     public Map<String, Class<? extends List>> getListsTypes();
     public String getSerializationName();
     public String getTableName();
-
+    public boolean prefixTable();
 }

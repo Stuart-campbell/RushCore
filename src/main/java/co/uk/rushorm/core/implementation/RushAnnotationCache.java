@@ -11,6 +11,7 @@ import co.uk.rushorm.core.AnnotationCache;
 import co.uk.rushorm.core.Rush;
 import co.uk.rushorm.core.RushConfig;
 import co.uk.rushorm.core.annotations.RushClassSerializationName;
+import co.uk.rushorm.core.annotations.RushCustomTableName;
 import co.uk.rushorm.core.annotations.RushDisableAutodelete;
 import co.uk.rushorm.core.annotations.RushIgnore;
 import co.uk.rushorm.core.annotations.RushList;
@@ -26,7 +27,8 @@ public class RushAnnotationCache implements AnnotationCache {
     private final Map<String, Class<? extends List>> listsTypes;
     private final String serializationName;
     private final String tableName;
-    
+    private final boolean prefixTable;
+
     public RushAnnotationCache(Class clazz, List<Field> fields, RushConfig rushConfig) {
         
         if(clazz.isAnnotationPresent(RushClassSerializationName.class)) {
@@ -35,11 +37,16 @@ public class RushAnnotationCache implements AnnotationCache {
         } else {
             serializationName = clazz.getSimpleName();
         }
-        
-        if(rushConfig.usingMySql()) {
+
+        if(clazz.isAnnotationPresent(RushCustomTableName.class)) {
+            tableName = ((RushCustomTableName)clazz.getAnnotation(RushCustomTableName.class)).name();
+            prefixTable = false;
+        }else if(rushConfig.usingMySql()) {
             tableName = serializationName;
+            prefixTable = true;
         }else {
             tableName = clazz.getName();
+            prefixTable = true;
         }
 
         listsClasses = new HashMap<>();
@@ -93,5 +100,10 @@ public class RushAnnotationCache implements AnnotationCache {
     @Override
     public String getTableName() {
         return tableName;
+    }
+
+    @Override
+    public boolean prefixTable() {
+        return prefixTable;
     }
 }
