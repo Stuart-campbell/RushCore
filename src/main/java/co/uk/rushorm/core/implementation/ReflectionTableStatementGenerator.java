@@ -63,8 +63,9 @@ public class ReflectionTableStatementGenerator implements RushTableStatementGene
         List<Field> fields = new ArrayList<>();
         ReflectionUtils.getAllFields(fields, clazz);
         for (Field field : fields) {
-            field.setAccessible(true);
-            if(!field.isAnnotationPresent(RushIgnore.class)) {
+
+            if(!annotationCache.get(clazz).getFieldToIgnore().contains(field.getName())) {
+                field.setAccessible(true);
                 Column column = columnFromField(clazz, field, rushColumns);
                 if(column != null) {
                     columnsStatement.append(",\n")
