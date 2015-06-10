@@ -3,6 +3,7 @@ package co.uk.rushorm.core;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import co.uk.rushorm.core.exceptions.RushLimitRequiredForOffsetException;
 import co.uk.rushorm.core.implementation.ReflectionUtils;
@@ -74,8 +75,8 @@ public class RushSearch {
         if(this.offset != null) {
             offset = "OFFSET " + Integer.toString(this.offset);
         }
-
-        return String.format(WHERE_TEMPLATE, ReflectionUtils.tableNameForClass(clazz, RushCore.getInstance().getAnnotationCache()), joinString.toString(), whereString.toString(), order.toString(), limit, offset);
+        Map<Class<? extends Rush>, AnnotationCache> annotationCache = RushCore.getInstance().getAnnotationCache();
+        return String.format(WHERE_TEMPLATE, annotationCache.get(clazz).getTableName(), joinString.toString(), whereString.toString(), order.toString(), limit, offset);
     }
 
     private String buildCountSql(Class<? extends Rush> clazz) {
@@ -88,7 +89,8 @@ public class RushSearch {
             RushWhere where = whereStatements.get(i);
             whereString.append(where.getStatement(clazz, joinString));
         }
-        return String.format(COUNT_TEMPLATE, ReflectionUtils.tableNameForClass(clazz, RushCore.getInstance().getAnnotationCache()), joinString.toString(), whereString.toString());
+        Map<Class<? extends Rush>, AnnotationCache> annotationCache = RushCore.getInstance().getAnnotationCache();
+        return String.format(COUNT_TEMPLATE, annotationCache.get(clazz).getTableName(), joinString.toString(), whereString.toString());
     }
 
     public RushSearch whereId(String id) {

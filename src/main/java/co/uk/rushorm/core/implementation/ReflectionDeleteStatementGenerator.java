@@ -38,16 +38,16 @@ public class ReflectionDeleteStatementGenerator implements RushDeleteStatementGe
             if (!annotationCache.get(clazz).getFieldToIgnore().contains(field.getName())) {
                 String joinTableName = null;
                 if (Rush.class.isAssignableFrom(field.getType())) {
-                    joinTableName = ReflectionUtils.joinTableNameForClass(clazz, (Class<? extends Rush>) field.getType(), field, annotationCache);
+                    joinTableName = ReflectionUtils.joinTableNameForClass(annotationCache.get(clazz).getTableName(), annotationCache.get((Class<? extends Rush>) field.getType()).getTableName(), field.getName());
                 } else if (annotationCache.get(clazz).getListsClasses().containsKey(field.getName())) {
-                    joinTableName = ReflectionUtils.joinTableNameForClass(clazz, annotationCache.get(clazz).getListsClasses().get(field.getName()), field, annotationCache);
+                    joinTableName = ReflectionUtils.joinTableNameForClass(annotationCache.get(clazz).getTableName(), annotationCache.get(annotationCache.get(clazz).getListsClasses().get(field.getName())).getTableName(), field.getName());
                 }
                 if(joinTableName != null) {
                     deleteCallback.deleteStatement("DELETE FROM " + joinTableName + ";");
                 }
             }
         }
-        deleteCallback.deleteStatement("DELETE FROM " + ReflectionUtils.tableNameForClass(clazz, annotationCache) + ";");
+        deleteCallback.deleteStatement("DELETE FROM " + annotationCache.get(clazz).getTableName() + ";");
         deleteCallback.deleteStatement("VACUUM;");
     }
 
@@ -71,7 +71,7 @@ public class ReflectionDeleteStatementGenerator implements RushDeleteStatementGe
                     try {
                         Rush child = (Rush) field.get(rush);
                         if (child != null) {
-                            joinTableName = ReflectionUtils.joinTableNameForClass(rush.getClass(), child.getClass(), field, annotationCache);
+                            joinTableName = ReflectionUtils.joinTableNameForClass(annotationCache.get(rush.getClass()).getTableName(), annotationCache.get(child.getClass()).getTableName(), field.getName());
                             if (!annotationCache.get(rush.getClass()).getDisableAutoDelete().contains(field.getName())) {
                                 generateDelete(child, annotationCache, deletes, joinDeletes, callback);
                             }
@@ -84,7 +84,7 @@ public class ReflectionDeleteStatementGenerator implements RushDeleteStatementGe
                         if(List.class.isAssignableFrom(field.getType())) {
                             List<Rush> fieldChildren = (List<Rush>) field.get(rush);
                             if (fieldChildren != null && fieldChildren.size() > 0) {
-                                joinTableName = ReflectionUtils.joinTableNameForClass(rush.getClass(), annotationCache.get(rush.getClass()).getListsClasses().get(field.getName()), field, annotationCache);
+                                joinTableName = ReflectionUtils.joinTableNameForClass(annotationCache.get(rush.getClass()).getTableName(), annotationCache.get(annotationCache.get(rush.getClass()).getListsClasses().get(field.getName())).getTableName(), field.getName());
                                 if (!annotationCache.get(rush.getClass()).getDisableAutoDelete().contains(field.getName())) {
                                     for (Rush child : fieldChildren) {
                                         generateDelete(child, annotationCache, deletes, joinDeletes, callback);
@@ -107,7 +107,7 @@ public class ReflectionDeleteStatementGenerator implements RushDeleteStatementGe
             }
         }
 
-        String table = ReflectionUtils.tableNameForClass(rush.getClass(), annotationCache);
+        String table = annotationCache.get(rush.getClass()).getTableName();
         if(!deletes.containsKey(table)) {
             deletes.put(table, new ArrayList<String>());
         }

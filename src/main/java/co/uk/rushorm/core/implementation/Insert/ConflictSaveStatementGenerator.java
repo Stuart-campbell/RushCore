@@ -41,7 +41,7 @@ public class ConflictSaveStatementGenerator extends ReflectionSaveStatementGener
 
             final List<BasicUpdate> creates = entry.getValue();
             Class<? extends Rush> clazz = entry.getKey();
-            String sqlTemplate = String.format(RushSqlUtils.SELECT_TEMPLATE, ReflectionUtils.tableNameForClass(clazz, annotationCache), "%s");
+            String sqlTemplate = String.format(RushSqlUtils.SELECT_TEMPLATE, annotationCache.get(clazz).getTableName(), "%s");
 
             Iterator<BasicUpdate> iterator = creates.iterator();
             checkForConflict(clazz, iterator, sqlTemplate, callback);

@@ -1,5 +1,8 @@
 package co.uk.rushorm.core.search;
 
+import java.util.Map;
+
+import co.uk.rushorm.core.AnnotationCache;
 import co.uk.rushorm.core.Rush;
 import co.uk.rushorm.core.RushCore;
 import co.uk.rushorm.core.implementation.ReflectionUtils;
@@ -27,8 +30,9 @@ public class RushWhereChild extends RushWhere {
     }
 
     public String getStatement(Class<? extends Rush> childClazz, StringBuilder joinString){
-        String joinTable = ReflectionUtils.joinTableNameForClass(clazz, childClazz, field, RushCore.getInstance().getAnnotationCache());
-        String parentTable = ReflectionUtils.tableNameForClass(childClazz, RushCore.getInstance().getAnnotationCache());
+        Map<Class<? extends Rush>, AnnotationCache> annotationCache = RushCore.getInstance().getAnnotationCache();
+        String joinTable = ReflectionUtils.joinTableNameForClass(annotationCache.get(clazz).getTableName(), annotationCache.get(childClazz).getTableName(), field);
+        String parentTable = annotationCache.get(childClazz).getTableName();
         joinString.append("\n").append(String.format(JOIN_CHILD, joinTable, parentTable, joinTable));
         return joinTable + ".parent" + modifier + "'" + id + "'";
     }

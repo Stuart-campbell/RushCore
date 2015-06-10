@@ -80,7 +80,22 @@ public class RushSqlUtils {
     public static final String COLUMNS_INFO_SQLITE = "PRAGMA table_info(%s)";
     public static final String COLUMNS_INFO_MYSQL = "DESCRIBE %s";
     public static final String RENAME_TABLE = "ALTER TABLE %s RENAME TO %s";
-    public static final String TABLE_INFO_SQLITE = "SELECT name FROM sqlite_master WHERE type='table';";
+    //public static final String TABLE_INFO_SQLITE = "SELECT name FROM sqlite_master WHERE type='table';";
+
+
+
+    public static final String TABLE_INFO_SQLITE =  "SELECT \n"+
+            "  name, type\n"+
+            "FROM \n"+
+            "  sqlite_master\n"+
+            "WHERE \n"+
+            "  type in ('table', 'view')\n"+
+            "AND \n"+
+            "  name not like 'sqlite?_%' escape '?' \n" +
+            "AND \n" +
+            "  name <> 'android_metadata'";
+
+
     public static final String TABLE_INFO_MYSQL = "select TABLE_NAME from information_schema.tables where TABLE_SCHEMA='%s';";
     public static final String DROP = "DROP TABLE %s";
     public static final String DELETE_INDEX = "DROP INDEX %s;";

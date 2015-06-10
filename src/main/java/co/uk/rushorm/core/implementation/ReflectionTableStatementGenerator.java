@@ -47,7 +47,7 @@ public class ReflectionTableStatementGenerator implements RushTableStatementGene
         }
 
         for(Join join : joins){
-            String joinTableName = ReflectionUtils.joinTableNameForClass(join.key, join.child, join.keyField, annotationCache);
+            String joinTableName = ReflectionUtils.joinTableNameForClass(annotationCache.get(join.key).getTableName(), annotationCache.get(join.child).getTableName(), join.keyField.getName());
             String sql = joinToStatement(join, joinTableName, annotationCache);
             statementCallback.statementCreated(sql);
             if(!rushConfig.usingMySql()) {
@@ -75,13 +75,13 @@ public class ReflectionTableStatementGenerator implements RushTableStatementGene
                 }
             }
         }
-        return String.format(RushSqlUtils.TABLE_TEMPLATE, ReflectionUtils.tableNameForClass(clazz, annotationCache), columnsStatement.toString());
+        return String.format(RushSqlUtils.TABLE_TEMPLATE, annotationCache.get(clazz).getTableName(), columnsStatement.toString());
     }
 
     private String joinToStatement(Join join, String joinTableName, Map<Class<? extends Rush>, AnnotationCache> annotationCache) {
         return String.format(rushConfig.usingMySql() ? RushSqlUtils.JOIN_TEMPLATE_MYSQL : RushSqlUtils.JOIN_TEMPLATE_SQLITE, joinTableName,
-                ReflectionUtils.tableNameForClass(join.key, annotationCache),
-                ReflectionUtils.tableNameForClass(join.child, annotationCache));
+                annotationCache.get(join.key).getTableName(),
+                annotationCache.get(join.child).getTableName());
     }
 
     private Column columnFromField(Class<? extends Rush> clazz, Field field, RushColumns rushColumns) {

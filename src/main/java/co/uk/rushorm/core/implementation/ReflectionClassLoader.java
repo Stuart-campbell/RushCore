@@ -133,7 +133,7 @@ public class ReflectionClassLoader implements RushClassLoader {
                 joins.put(clazz, new ArrayList<Join>());
                 joinTables.put(clazz, new ArrayList<String>());
             }
-            String tableName = ReflectionUtils.joinTableNameForClass(object.getClass(), clazz, field, annotationCache);
+            String tableName = ReflectionUtils.joinTableNameForClass(annotationCache.get(object.getClass()).getTableName(), annotationCache.get(clazz).getTableName(), field.getName());
             joins.get(clazz).add(new Join(object, tableName, field));
             if(!joinTables.get(clazz).contains(tableName)) {
                 joinTables.get(clazz).add(tableName);
@@ -149,7 +149,7 @@ public class ReflectionClassLoader implements RushClassLoader {
 
     private <T extends Rush> void addChildrenToList(final Class<T> clazz, final RushColumns rushColumns, final Map<Class<? extends Rush>, AnnotationCache> annotationCache, final List<Join> joins, final List<String> tableNames, final Map<Class, Map<String, T>> loadedClasses, final LoadCallback callback) {
 
-        final String tableName = ReflectionUtils.tableNameForClass(clazz, annotationCache);
+        final String tableName = annotationCache.get(clazz).getTableName();
         final Map<Integer, String> tableMap = new HashMap<>();
         final Map<String, Map<String, Join>> parentMap = new HashMap<>();
         final String joinsString = joinSection(tableName, tableNames, tableMap, parentMap);

@@ -45,7 +45,7 @@ public class RushAnnotationCache implements AnnotationCache {
             tableName = serializationName;
             prefixTable = true;
         }else {
-            tableName = clazz.getName();
+            tableName = ReflectionUtils.tableNameForClass(clazz.getName());
             prefixTable = true;
         }
 
