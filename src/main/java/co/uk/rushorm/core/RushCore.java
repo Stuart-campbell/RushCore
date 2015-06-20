@@ -38,6 +38,13 @@ import co.uk.rushorm.core.implementation.RushSqlUtils;
  */
 public class RushCore {
 
+    /**
+     * RushInitializeConfig replaces this making it far easier to customise any class
+     * without writing boiler plate code for the other classes
+     *
+     * @deprecated use {@link #initialize(RushInitializeConfig rushInitializeConfig)} instead.
+     */
+    @Deprecated
     public static void initialize(RushClassFinder rushClassFinder, RushStatementRunner statementRunner, RushQueProvider queProvider, RushConfig rushConfig, RushStringSanitizer rushStringSanitizer, Logger logger, List<RushColumn> columns, RushObjectSerializer rushObjectSerializer, RushObjectDeserializer rushObjectDeserializer) {
 
         if(rushConfig.usingMySql()) {
@@ -57,7 +64,6 @@ public class RushCore {
         RushColumns rushColumns = new RushColumnsImplementation(columns);
 
         RushUpgradeManager rushUpgradeManager = new ReflectionUpgradeManager(logger, rushConfig);
-        Map<Class<? extends Rush>, AnnotationCache> annotationCache = new HashMap<>();
         RushSqlInsertGenerator rushSqlInsertGenerator = rushConfig.userBulkInsert() ? new SqlBulkInsertGenerator(rushConfig) : new SqlSingleInsertGenerator(rushConfig);
 
         RushSaveStatementGenerator saveStatementGenerator = new ReflectionSaveStatementGenerator(rushSqlInsertGenerator);
@@ -67,7 +73,27 @@ public class RushCore {
         RushTableStatementGenerator rushTableStatementGenerator = new ReflectionTableStatementGenerator(rushConfig);
         RushClassLoader rushClassLoader = new ReflectionClassLoader();
 
-        initialize(rushUpgradeManager, saveStatementGenerator, conflictSaveStatementGenerator, deleteStatementGenerator, rushJoinStatementGenerator, rushClassFinder, rushTableStatementGenerator, statementRunner, queProvider, rushConfig, rushClassLoader, rushStringSanitizer, logger, rushObjectSerializer, rushObjectDeserializer, rushColumns, annotationCache, null);
+        initialize(rushUpgradeManager, saveStatementGenerator, conflictSaveStatementGenerator, deleteStatementGenerator, rushJoinStatementGenerator, rushClassFinder, rushTableStatementGenerator, statementRunner, queProvider, rushConfig, rushClassLoader, rushStringSanitizer, logger, rushObjectSerializer, rushObjectDeserializer, rushColumns, null);
+    }
+
+    public static void initialize(RushInitializeConfig rushInitializeConfig) {
+        initialize(rushInitializeConfig.getRushUpgradeManager(),
+                rushInitializeConfig.getSaveStatementGenerator(),
+                rushInitializeConfig.getRushConflictSaveStatementGenerator(),
+                rushInitializeConfig.getRushDeleteStatementGenerator(),
+                rushInitializeConfig.getRushJoinStatementGenerator(),
+                rushInitializeConfig.getRushClassFinder(),
+                rushInitializeConfig.getRushTableStatementGenerator(),
+                rushInitializeConfig.getRushStatementRunner(),
+                rushInitializeConfig.getRushQueProvider(),
+                rushInitializeConfig.getRushConfig(),
+                rushInitializeConfig.getRushClassLoader(),
+                rushInitializeConfig.getRushStringSanitizer(),
+                rushInitializeConfig.getRushLogger(),
+                rushInitializeConfig.getRushObjectSerializer(),
+                rushInitializeConfig.getRushObjectDeserializer(),
+                rushInitializeConfig.getRushColumns(),
+                rushInitializeConfig.getInitializeListener());
     }
 
     public static void initialize(final RushUpgradeManager rushUpgradeManager,
@@ -86,14 +112,13 @@ public class RushCore {
                                   RushObjectSerializer rushObjectSerializer,
                                   RushObjectDeserializer rushObjectDeserializer,
                                   RushColumns rushColumns,
-                                  Map<Class<? extends Rush>, AnnotationCache> annotationCache,
                                   final InitializeListener initializeListener) {
 
         if(rushCore != null) {
             logger.logError("RushCore has already been initialized, make sure initialize is only called once.");
         }
 
-        rushCore = new RushCore(saveStatementGenerator, rushConflictSaveStatementGenerator, deleteStatementGenerator, rushJoinStatementGenerator, statementRunner, queProvider, rushConfig, rushTableStatementGenerator, rushClassLoader, rushStringSanitizer, logger, rushObjectSerializer, rushObjectDeserializer, rushColumns, annotationCache);
+        rushCore = new RushCore(saveStatementGenerator, rushConflictSaveStatementGenerator, deleteStatementGenerator, rushJoinStatementGenerator, statementRunner, queProvider, rushConfig, rushTableStatementGenerator, rushClassLoader, rushStringSanitizer, logger, rushObjectSerializer, rushObjectDeserializer, rushColumns);
         rushCore.loadAnnotationCache(rushClassFinder);
 
         final boolean isFirstRun = statementRunner.isFirstRun();
@@ -400,7 +425,7 @@ public class RushCore {
     private final RushObjectSerializer rushObjectSerializer;
     private final RushObjectDeserializer rushObjectDeserializer;
     private final RushColumns rushColumns;
-    private final Map<Class<? extends Rush>, AnnotationCache> annotationCache;
+    private final Map<Class<? extends Rush>, AnnotationCache> annotationCache = new HashMap<>();
 
 
     private RushCore(RushSaveStatementGenerator saveStatementGenerator,
@@ -415,8 +440,7 @@ public class RushCore {
                      Logger logger,
                      RushObjectSerializer rushObjectSerializer,
                      RushObjectDeserializer rushObjectDeserializer,
-                     RushColumns rushColumns,
-                     Map<Class<? extends Rush>, AnnotationCache> annotationCache) {
+                     RushColumns rushColumns) {
 
         this.saveStatementGenerator = saveStatementGenerator;
         this.rushConflictSaveStatementGenerator = rushConflictSaveStatementGenerator;
@@ -432,7 +456,6 @@ public class RushCore {
         this.rushObjectSerializer = rushObjectSerializer;
         this.rushObjectDeserializer = rushObjectDeserializer;
         this.rushColumns = rushColumns;
-        this.annotationCache = annotationCache;
     }
     
     private void loadAnnotationCache(RushClassFinder rushClassFinder) {
