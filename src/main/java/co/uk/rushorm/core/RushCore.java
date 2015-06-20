@@ -499,33 +499,41 @@ public class RushCore {
         queProvider.queComplete(que);
     }
 
+    private static final int SAVE_GROUP_SIZE = 1000;
     private void save(List<? extends Rush> objects, final RushQue que) {
-        statementRunner.startTransition(que);
-        saveStatementGenerator.generateSaveOrUpdate(objects, annotationCache, rushStringSanitizer, rushColumns, new RushSaveStatementGeneratorCallback() {
-            @Override
-            public void addRush(Rush rush, RushMetaData rushMetaData) {
-                registerObjectWithMetaData(rush, rushMetaData);
-            }
+        for (int i = 0; i < Math.ceil(objects.size() / ((float)SAVE_GROUP_SIZE)); i ++) {
 
-            @Override
-            public void createdOrUpdateStatement(String sql) {
-                logger.logSql(sql);
-                statementRunner.runRaw(sql, que);
-            }
+            int start = i * SAVE_GROUP_SIZE;
+            int end = Math.min(objects.size(), start + SAVE_GROUP_SIZE);
+            List<? extends Rush> group = objects.subList(start, end);
 
-            @Override
-            public void deleteStatement(String sql) {
-                logger.logSql(sql);
-                statementRunner.runRaw(sql, que);
-            }
+            statementRunner.startTransition(que);
+            saveStatementGenerator.generateSaveOrUpdate(group, annotationCache, rushStringSanitizer, rushColumns, new RushSaveStatementGeneratorCallback() {
+                @Override
+                public void addRush(Rush rush, RushMetaData rushMetaData) {
+                    registerObjectWithMetaData(rush, rushMetaData);
+                }
 
-            @Override
-            public RushMetaData getMetaData(Rush rush) {
-                return idTable.get(rush);
-            }
-        });
-        statementRunner.endTransition(que);
-        queProvider.queComplete(que);
+                @Override
+                public void createdOrUpdateStatement(String sql) {
+                    logger.logSql(sql);
+                    statementRunner.runRaw(sql, que);
+                }
+
+                @Override
+                public void deleteStatement(String sql) {
+                    logger.logSql(sql);
+                    statementRunner.runRaw(sql, que);
+                }
+
+                @Override
+                public RushMetaData getMetaData(Rush rush) {
+                    return idTable.get(rush);
+                }
+            });
+            statementRunner.endTransition(que);
+            queProvider.queComplete(que);
+        }
     }
 
     private List<RushConflict> saveOnlyWithoutConflict(List<? extends Rush> objects, final RushQue que) {

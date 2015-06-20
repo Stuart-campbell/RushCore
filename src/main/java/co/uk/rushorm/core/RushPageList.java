@@ -25,6 +25,16 @@ public class RushPageList<T extends Rush> implements RushListField<T>, Iterable<
 
     }
 
+    public RushPageList(Class<T> clazz) {
+        rushSearch = new RushSearch();
+        this.clazz = clazz;
+    }
+
+    public RushPageList(RushSearch rushSearch, Class<T> clazz) {
+        this.rushSearch = rushSearch;
+        this.clazz = clazz;
+    }
+
     public RushPageList(Rush parent, String fieldName, Class<T> clazz) {
         setDetails(parent, fieldName, clazz);
     }
@@ -58,7 +68,7 @@ public class RushPageList<T extends Rush> implements RushListField<T>, Iterable<
     }
 
     @Override
-    public Iterator iterator() {
+    public Iterator<T> iterator() {
         return new RushPageListIterator();
     }
 

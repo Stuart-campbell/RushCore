@@ -15,25 +15,12 @@ import co.uk.rushorm.core.RushStatementGeneratorCallback;
  */
 public class ReflectionUtils {
 
-    public static final int GROUP_SIZE = 250;
-/*
-    public static String tableNameForClass(Class<? extends Rush> clazz, Map<Class<? extends Rush>, AnnotationCache> annotationCache) {
-        String name = annotationCache.get(clazz).getTableName();
-        return annotationCache.get(clazz).prefixTable() ? tableNameForClass(name) : name;
-    }
-*/
+    public static final int GROUP_SIZE = 499;
+
     public static String tableNameForClass(String name) {
         return RushSqlUtils.RUSH_TABLE_PREFIX + name.replace(".", "_").replace("$", "_");
     }
-/*
-    public static String joinTableNameForClass(Class<? extends Rush> parent, Class<? extends Rush> child, Field field, Map<Class<? extends Rush>, AnnotationCache> annotationCache) {
-        return joinTableNameForClass(parent, child, field.getName(), annotationCache);
-    }
 
-    public static String joinTableNameForClass(Class<? extends Rush> parent, Class<? extends Rush> child, String field, Map<Class<? extends Rush>, AnnotationCache> annotationCache) {
-        return joinTableNameForClass(tableNameForClass(parent, annotationCache), tableNameForClass(child, annotationCache), field);
-    }
-*/
     public static String joinTableNameForClass(String parentName, String childName, String fieldName) {
         return parentName + "_" + childName + "_" + fieldName;
     }

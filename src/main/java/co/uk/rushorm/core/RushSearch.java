@@ -224,6 +224,22 @@ public class RushSearch {
         return this;
     }
 
+    public RushSearch whereStartsWith(String field, String value) {
+        return whereLike(field, value + "%");
+    }
+
+    public RushSearch whereEndsWith(String field, String value) {
+        return whereLike(field, "%" + value);
+    }
+
+    public RushSearch whereContains(String field, String value) {
+        return whereLike(field, "%" + value + "%");
+    }
+
+    public RushSearch whereLike(String field, String value) {
+        return where(field, " LIKE ", RushCore.getInstance().sanitize(value));
+    }
+
     public RushSearch whereChildOf(Rush value, String field) {
         return whereChildOf(value.getClass(), field, value.getId());
     }
