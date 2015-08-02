@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 
 import co.uk.rushorm.core.exceptions.RushLimitRequiredForOffsetException;
-import co.uk.rushorm.core.implementation.ReflectionUtils;
 import co.uk.rushorm.core.implementation.RushSqlUtils;
 import co.uk.rushorm.core.search.RushOrderBy;
 import co.uk.rushorm.core.search.RushWhere;
@@ -19,11 +18,12 @@ import co.uk.rushorm.core.search.RushWhereStatement;
  */
 public class RushSearch {
 
-    private static final String WHERE_TEMPLATE = "SELECT * from %s %s %s %s %s %s;";
+    private static final String WHERE_TEMPLATE = "SELECT * from %s %s %s %s %s %s %s;";
     private static final String COUNT_TEMPLATE = "SELECT COUNT(*) from %s %s %s;";
 
     private final List<RushWhere> whereStatements = new ArrayList<>();
     private final List<RushOrderBy> orderStatements = new ArrayList<>();
+    private final List<String> groupBy = new ArrayList<>();
 
     private Integer limit;
     private Integer offset;
@@ -75,8 +75,19 @@ public class RushSearch {
         if(this.offset != null) {
             offset = "OFFSET " + Integer.toString(this.offset);
         }
+
+        StringBuilder groupBy = new StringBuilder();
+        for(int i = 0; i < this.groupBy.size(); i ++) {
+            if(i < 1){
+                order.append("\nGROUP BY ");
+            }else if(i < this.groupBy.size() - 1){
+                order.append(", ");
+            }
+            order.append(this.groupBy.get(i));
+        }
+
         Map<Class<? extends Rush>, AnnotationCache> annotationCache = RushCore.getInstance().getAnnotationCache();
-        return String.format(WHERE_TEMPLATE, annotationCache.get(clazz).getTableName(), joinString.toString(), whereString.toString(), order.toString(), limit, offset);
+        return String.format(WHERE_TEMPLATE, annotationCache.get(clazz).getTableName(), joinString.toString(), whereString.toString(), order.toString(), groupBy.toString(), limit, offset);
     }
 
     private String buildCountSql(Class<? extends Rush> clazz) {
@@ -347,5 +358,10 @@ public class RushSearch {
         }
 
         return String.format(JSON_TEMPLATE, limit, offset, order.toString(), where.toString());
+    }
+
+    public RushSearch groupBy(String field) {
+        groupBy.add(field);
+        return this;
     }
 }
