@@ -60,7 +60,7 @@ public class RushSearch {
         for(int i = 0; i < orderStatements.size(); i ++) {
             if(i < 1){
                 order.append("\nORDER BY ");
-            }else if(i < orderStatements.size() - 1){
+            }else if(i < orderStatements.size()){
                 order.append(", ");
             }
             order.append(orderStatements.get(i).getStatement());
@@ -79,11 +79,11 @@ public class RushSearch {
         StringBuilder groupBy = new StringBuilder();
         for(int i = 0; i < this.groupBy.size(); i ++) {
             if(i < 1){
-                order.append("\nGROUP BY ");
-            }else if(i < this.groupBy.size() - 1){
-                order.append(", ");
+                groupBy.append("\nGROUP BY ");
+            }else if(i < this.groupBy.size()){
+                groupBy.append(", ");
             }
-            order.append(this.groupBy.get(i));
+            groupBy.append(this.groupBy.get(i));
         }
 
         Map<Class<? extends Rush>, AnnotationCache> annotationCache = RushCore.getInstance().getAnnotationCache();
