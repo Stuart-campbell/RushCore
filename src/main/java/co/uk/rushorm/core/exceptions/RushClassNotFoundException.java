@@ -6,7 +6,7 @@ package co.uk.rushorm.core.exceptions;
 public class RushClassNotFoundException extends RuntimeException {
 
     public RushClassNotFoundException(Class clazz) {
-        super("Rush class " + clazz.getSimpleName() + " was not found. Please make sure that if you have implemented your own RushClassFinder it returns this class.");
+        super("Rush class " + clazz.getSimpleName() + " was not found. Please make sure that if you are using setClasses on RushInitializeConfig you include this class.");
     }
 
 }

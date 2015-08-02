@@ -16,6 +16,7 @@ import co.uk.rushorm.core.RushListField;
 import co.uk.rushorm.core.RushMetaData;
 import co.uk.rushorm.core.RushPageList;
 import co.uk.rushorm.core.RushStatementRunner;
+import co.uk.rushorm.core.exceptions.RushClassNotFoundException;
 
 /**
  * Created by Stuart on 14/12/14.
@@ -71,6 +72,10 @@ public class ReflectionClassLoader implements RushClassLoader {
     }
 
     private <T extends Rush> T loadClass(Class<T> clazz, RushColumns rushColumns, Map<Class<? extends Rush>, AnnotationCache> annotationCache, List<String> values, Map<Class, List<Join>> joins, Map<Class, List<String>> joinTables, Map<Class, Map<String, T>> loadedClasses, LoadCallback callback) throws IllegalAccessException, InstantiationException, ClassNotFoundException {
+
+        if(annotationCache.get(clazz) == null) {
+            throw new RushClassNotFoundException(clazz);
+        }
 
         RushMetaData rushMetaData = new RushMetaData(values.get(0), Long.parseLong(values.get(1)), Long.parseLong(values.get(2)), Long.parseLong(values.get(3)));
 
@@ -132,6 +137,9 @@ public class ReflectionClassLoader implements RushClassLoader {
             if(!joins.containsKey(clazz)) {
                 joins.put(clazz, new ArrayList<Join>());
                 joinTables.put(clazz, new ArrayList<String>());
+            }
+            if(annotationCache.get(clazz) == null) {
+                throw new RushClassNotFoundException(clazz);
             }
             String tableName = ReflectionUtils.joinTableNameForClass(annotationCache.get(object.getClass()).getTableName(), annotationCache.get(clazz).getTableName(), field.getName());
             joins.get(clazz).add(new Join(object, tableName, field));

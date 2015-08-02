@@ -135,7 +135,10 @@ public class ReflectionSaveStatementGenerator implements RushSaveStatementGenera
     private String joinFromField(List<BasicJoin> joins, Rush rush, Field field, Map<Class<? extends Rush>, AnnotationCache> annotationCache) {
 
         if (Rush.class.isAssignableFrom(field.getType())) {
-            String tableName = ReflectionUtils.joinTableNameForClass(annotationCache.get(rush.getClass()).getTableName(), annotationCache.get((Class<? extends Rush>) field.getType()).getTableName(), field.getName());
+            if(annotationCache.get(field.getType()) == null) {
+                throw new RushClassNotFoundException(rush.getClass());
+            }
+            String tableName = ReflectionUtils.joinTableNameForClass(annotationCache.get(rush.getClass()).getTableName(), annotationCache.get(field.getType()).getTableName(), field.getName());
             try {
                 Rush child = (Rush) field.get(rush);
                 if (child != null) {
@@ -155,6 +158,9 @@ public class ReflectionSaveStatementGenerator implements RushSaveStatementGenera
             }
 
             Class listClass = annotationCache.get(rush.getClass()).getListsClasses().get(field.getName());
+            if(annotationCache.get(listClass) == null) {
+                throw new RushClassNotFoundException(rush.getClass());
+            }
             String tableName = ReflectionUtils.joinTableNameForClass(annotationCache.get(rush.getClass()).getTableName(), annotationCache.get(listClass).getTableName(), field.getName());
             if (Rush.class.isAssignableFrom(listClass)) {
                 try {
