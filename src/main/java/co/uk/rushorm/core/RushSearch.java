@@ -286,6 +286,16 @@ public class RushSearch {
         return this;
     }
 
+    public RushSearch whereIN(String column, List<String> values) {
+        String inStatement = "(";
+        for (String value : values) {
+            inStatement += value + ",";
+        }
+        inStatement = inStatement.substring(0, inStatement.length() - 1) + ")";
+        whereStatements.add(new RushWhereStatement(column, " IN ", inStatement));
+        return this;
+    }
+
     public List<RushWhere> getWhereStatements() {
         return whereStatements;
     }
