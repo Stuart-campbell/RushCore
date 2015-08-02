@@ -183,32 +183,30 @@ public class ReflectionClassLoader implements RushClassLoader {
                 loadClasses(clazz, rushColumns, annotationCache, values, callback, loadedClasses, new AttachChild<T>() {
                     @Override
                     public void attach(T object, List<String> values) throws IllegalAccessException {
-                        int i = values.size() - 2;
-                        int offset = 1;
-                        while(values.get(i) == null) {
-                            i -= 3;
-                            offset += 3;
-                        }
-                        String parentId = values.get(i);
-                        String tableName = tableMap.get(offset);
-                        Join join = parentMap.get(tableName).get(parentId);
-                        Rush parent = join.parent;
-                        if(Rush.class.isAssignableFrom(join.field.getType())) {
-                                join.field.set(parent, object);
-                        } else {
-                            List<Rush> children = (List<Rush>)join.field.get(parent);
-                            if(children == null) {
-                                try {
-                                    Class<? extends List> listClazz = annotationCache.get(join.parent.getClass()).getListsTypes().get(join.field.getName());
-                                    Constructor<? extends List> constructor = listClazz.getConstructor();
-                                    children = constructor.newInstance();
-                                } catch (InstantiationException | InvocationTargetException | NoSuchMethodException e) {
-                                    e.printStackTrace();
-                                    children = new ArrayList<>();
+                        for(int i = values.size() - 2, offset = 1; i > 0; i -= 3, offset += 3) {
+                            if(values.get(i) != null && tableMap.containsKey(offset)) {
+                                String parentId = values.get(i);
+                                String tableName = tableMap.get(offset);
+                                Join join = parentMap.get(tableName).get(parentId);
+                                Rush parent = join.parent;
+                                if(Rush.class.isAssignableFrom(join.field.getType())) {
+                                    join.field.set(parent, object);
+                                } else {
+                                    List<Rush> children = (List<Rush>)join.field.get(parent);
+                                    if(children == null) {
+                                        try {
+                                            Class<? extends List> listClazz = annotationCache.get(join.parent.getClass()).getListsTypes().get(join.field.getName());
+                                            Constructor<? extends List> constructor = listClazz.getConstructor();
+                                            children = constructor.newInstance();
+                                        } catch (InstantiationException | InvocationTargetException | NoSuchMethodException e) {
+                                            e.printStackTrace();
+                                            children = new ArrayList<>();
+                                        }
+                                        join.field.set(parent, children);
+                                    }
+                                    children.add(object);
                                 }
-                                join.field.set(parent, children);
                             }
-                            children.add(object);
                         }
                     }
                 });
