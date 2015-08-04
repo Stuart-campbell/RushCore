@@ -68,7 +68,7 @@ public class ReflectionSaveStatementGenerator implements RushSaveStatementGenera
                                       Map<String, List<BasicJoin>> joinValuesMap,
                                       RushSaveStatementGeneratorCallback saveCallback) {
 
-        if (rushObjects.contains(rush)) {
+        if(contains(rushObjects, rush)) {
             // Exit if object is referenced by child
             return;
         }
@@ -130,6 +130,16 @@ public class ReflectionSaveStatementGenerator implements RushSaveStatementGenera
             saveCallback.addRush(rush, rushMetaData);
         }
         updateValuesMap.get(rush.getClass()).add(new BasicUpdate(values, rush, rushMetaData));
+    }
+
+    private boolean contains(List<Rush> objects, Rush rush) {
+        for(Rush object : objects) {
+            String id = object.getId();
+            if(object == rush || (id != null && id.equals(rush.getId()))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private String joinFromField(List<BasicJoin> joins, Rush rush, Field field, Map<Class<? extends Rush>, AnnotationCache> annotationCache) {
