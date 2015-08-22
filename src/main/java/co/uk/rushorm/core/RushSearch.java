@@ -274,6 +274,16 @@ public class RushSearch {
         return this;
     }
 
+    public RushSearchEx whereIsNull(String field) {
+        whereStatements.add(new RushWhere(field + " IS NULL"));
+        return this;
+    }
+
+    public RushSearchEx whereIsNotNull(String field) {
+        whereStatements.add(new RushWhere(field + " IS NOT NULL"));
+        return this;
+    }
+
     public RushSearch orderDesc(String field){
         orderStatements.add(new RushOrderBy(field, "DESC"));
         return this;
