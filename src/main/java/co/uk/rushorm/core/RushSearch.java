@@ -274,12 +274,12 @@ public class RushSearch {
         return this;
     }
 
-    public RushSearchEx whereIsNull(String field) {
+    public RushSearch whereIsNull(String field) {
         whereStatements.add(new RushWhere(field + " IS NULL"));
         return this;
     }
 
-    public RushSearchEx whereIsNotNull(String field) {
+    public RushSearch whereIsNotNull(String field) {
         whereStatements.add(new RushWhere(field + " IS NOT NULL"));
         return this;
     }

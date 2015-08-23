@@ -532,8 +532,8 @@ public class RushCore {
                 }
             });
             statementRunner.endTransition(que);
-            queProvider.queComplete(que);
         }
+        queProvider.queComplete(que);
     }
 
     private List<RushConflict> saveOnlyWithoutConflict(List<? extends Rush> objects, final RushQue que) {
