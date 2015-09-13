@@ -66,12 +66,12 @@ public class RushCore {
         RushUpgradeManager rushUpgradeManager = new ReflectionUpgradeManager(logger, rushConfig);
         RushSqlInsertGenerator rushSqlInsertGenerator = rushConfig.userBulkInsert() ? new SqlBulkInsertGenerator(rushConfig) : new SqlSingleInsertGenerator(rushConfig);
 
-        RushSaveStatementGenerator saveStatementGenerator = new ReflectionSaveStatementGenerator(rushSqlInsertGenerator);
-        RushConflictSaveStatementGenerator conflictSaveStatementGenerator = new ConflictSaveStatementGenerator(rushSqlInsertGenerator);
-        RushDeleteStatementGenerator deleteStatementGenerator = new ReflectionDeleteStatementGenerator();
+        RushSaveStatementGenerator saveStatementGenerator = new ReflectionSaveStatementGenerator(rushSqlInsertGenerator, rushConfig);
+        RushConflictSaveStatementGenerator conflictSaveStatementGenerator = new ConflictSaveStatementGenerator(rushSqlInsertGenerator, rushConfig);
+        RushDeleteStatementGenerator deleteStatementGenerator = new ReflectionDeleteStatementGenerator(rushConfig);
         RushJoinStatementGenerator rushJoinStatementGenerator = new ReflectionJoinStatementGenerator();
         RushTableStatementGenerator rushTableStatementGenerator = new ReflectionTableStatementGenerator(rushConfig);
-        RushClassLoader rushClassLoader = new ReflectionClassLoader();
+        RushClassLoader rushClassLoader = new ReflectionClassLoader(rushConfig);
 
         initialize(rushUpgradeManager, saveStatementGenerator, conflictSaveStatementGenerator, deleteStatementGenerator, rushJoinStatementGenerator, rushClassFinder, rushTableStatementGenerator, statementRunner, queProvider, rushConfig, rushClassLoader, rushStringSanitizer, logger, rushObjectSerializer, rushObjectDeserializer, rushColumns, null);
     }
@@ -461,7 +461,7 @@ public class RushCore {
     private void loadAnnotationCache(RushClassFinder rushClassFinder) {
         for(Class<? extends Rush> clazz : rushClassFinder.findClasses(rushConfig)) {
             List<Field> fields = new ArrayList<>();
-            ReflectionUtils.getAllFields(fields, clazz);
+            ReflectionUtils.getAllFields(fields, clazz, rushConfig.orderColumnsAlphabetically());
             annotationCache.put(clazz, new RushAnnotationCache(clazz, fields, rushConfig));
         }       
     }

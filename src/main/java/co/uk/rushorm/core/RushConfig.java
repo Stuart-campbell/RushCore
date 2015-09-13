@@ -11,4 +11,5 @@ public interface RushConfig {
     public boolean requireTableAnnotation();
     public boolean usingMySql();
     public boolean userBulkInsert();
+    public boolean orderColumnsAlphabetically();
 }

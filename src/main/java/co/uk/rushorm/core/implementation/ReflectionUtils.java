@@ -2,6 +2,8 @@ package co.uk.rushorm.core.implementation;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -25,10 +27,22 @@ public class ReflectionUtils {
         return parentName + "_" + childName + "_" + fieldName;
     }
 
-    public static void getAllFields(List<Field> fields, Class<?> type) {
+    public static void getAllFields(List<Field> fields, Class<?> type, boolean sortAlphabetically) {
+        addFields(fields, type);
+        if(sortAlphabetically) {
+            Collections.sort(fields, new Comparator<Field>() {
+                @Override
+                public int compare(Field o1, Field o2) {
+                    return o1.getName().compareTo(o2.getName());
+                }
+            });
+        }
+    }
+
+    private static void addFields(List<Field> fields, Class<?> type) {
         if (type.getSuperclass() != null) {
             fields.addAll(Arrays.asList(type.getDeclaredFields()));
-            getAllFields(fields, type.getSuperclass());
+            addFields(fields, type.getSuperclass());
         }
     }
 

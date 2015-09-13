@@ -61,7 +61,7 @@ public class ReflectionTableStatementGenerator implements RushTableStatementGene
         StringBuilder columnsStatement = new StringBuilder();
 
         List<Field> fields = new ArrayList<>();
-        ReflectionUtils.getAllFields(fields, clazz);
+        ReflectionUtils.getAllFields(fields, clazz, rushConfig.orderColumnsAlphabetically());
         for (Field field : fields) {
 
             if(!annotationCache.get(clazz).getFieldToIgnore().contains(field.getName())) {

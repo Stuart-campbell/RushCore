@@ -14,7 +14,6 @@ import co.uk.rushorm.core.RushConflictSaveStatementGenerator;
 import co.uk.rushorm.core.RushMetaData;
 import co.uk.rushorm.core.RushSaveStatementGeneratorCallback;
 import co.uk.rushorm.core.RushStringSanitizer;
-import co.uk.rushorm.core.implementation.ReflectionUtils;
 import co.uk.rushorm.core.implementation.RushSqlUtils;
 
 /**
@@ -22,8 +21,8 @@ import co.uk.rushorm.core.implementation.RushSqlUtils;
  */
 public class ConflictSaveStatementGenerator extends ReflectionSaveStatementGenerator implements RushConflictSaveStatementGenerator {
 
-    public ConflictSaveStatementGenerator(RushSqlInsertGenerator rushSqlInsertGenerator) {
-        super(rushSqlInsertGenerator);
+    public ConflictSaveStatementGenerator(RushSqlInsertGenerator rushSqlInsertGenerator, RushConfig rushConfig) {
+        super(rushSqlInsertGenerator, rushConfig);
     }
 
     @Override

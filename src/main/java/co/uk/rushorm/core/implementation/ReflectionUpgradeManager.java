@@ -198,7 +198,7 @@ public class ReflectionUpgradeManager implements RushUpgradeManager {
         tableMapping.name = new PotentialMapping(classNames, annotationCache.get(clazz).getTableName());
 
         List<Field> fields = new ArrayList<>();
-        ReflectionUtils.getAllFields(fields, clazz);
+        ReflectionUtils.getAllFields(fields, clazz, rushConfig.orderColumnsAlphabetically());
         for (Field field : fields) {
             field.setAccessible(true);
             if (!field.isAnnotationPresent(RushIgnore.class)) {

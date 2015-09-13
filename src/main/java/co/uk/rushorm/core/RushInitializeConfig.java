@@ -62,7 +62,7 @@ public abstract class RushInitializeConfig {
 
     public RushSaveStatementGenerator getSaveStatementGenerator() {
         if(saveStatementGenerator == null) {
-            saveStatementGenerator = new ReflectionSaveStatementGenerator(getRushSqlInsertGenerator());
+            saveStatementGenerator = new ReflectionSaveStatementGenerator(getRushSqlInsertGenerator(), getRushConfig());
         }
         return saveStatementGenerator;
     }
@@ -73,7 +73,7 @@ public abstract class RushInitializeConfig {
 
     public RushConflictSaveStatementGenerator getRushConflictSaveStatementGenerator() {
         if(rushConflictSaveStatementGenerator == null){
-            rushConflictSaveStatementGenerator = new ConflictSaveStatementGenerator(getRushSqlInsertGenerator());
+            rushConflictSaveStatementGenerator = new ConflictSaveStatementGenerator(getRushSqlInsertGenerator(), getRushConfig());
         }
         return rushConflictSaveStatementGenerator;
     }
@@ -84,7 +84,7 @@ public abstract class RushInitializeConfig {
 
     public RushDeleteStatementGenerator getRushDeleteStatementGenerator() {
         if(rushDeleteStatementGenerator == null){
-            rushDeleteStatementGenerator = new ReflectionDeleteStatementGenerator();
+            rushDeleteStatementGenerator = new ReflectionDeleteStatementGenerator(getRushConfig());
         }
         return rushDeleteStatementGenerator;
     }
@@ -141,7 +141,7 @@ public abstract class RushInitializeConfig {
 
     public RushClassLoader getRushClassLoader(){
         if(rushClassLoader == null){
-            rushClassLoader = new ReflectionClassLoader();
+            rushClassLoader = new ReflectionClassLoader(getRushConfig());
         }
         return rushClassLoader;
     }

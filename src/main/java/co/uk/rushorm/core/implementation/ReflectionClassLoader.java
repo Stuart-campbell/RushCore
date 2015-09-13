@@ -12,6 +12,7 @@ import co.uk.rushorm.core.AnnotationCache;
 import co.uk.rushorm.core.Rush;
 import co.uk.rushorm.core.RushClassLoader;
 import co.uk.rushorm.core.RushColumns;
+import co.uk.rushorm.core.RushConfig;
 import co.uk.rushorm.core.RushListField;
 import co.uk.rushorm.core.RushMetaData;
 import co.uk.rushorm.core.RushPageList;
@@ -23,6 +24,8 @@ import co.uk.rushorm.core.exceptions.RushClassNotFoundException;
  */
 public class ReflectionClassLoader implements RushClassLoader {
 
+
+
     private class Join {
         private final Rush parent;
         private final String tableName;
@@ -32,6 +35,12 @@ public class ReflectionClassLoader implements RushClassLoader {
             this.tableName = tableName;
             this.field = field;
         }
+    }
+
+    private final RushConfig rushConfig;
+
+    public ReflectionClassLoader(RushConfig rushConfig) {
+        this.rushConfig = rushConfig;
     }
 
     private interface AttachChild<T extends Rush> {
@@ -91,7 +100,7 @@ public class ReflectionClassLoader implements RushClassLoader {
         callback.didLoadObject(object, rushMetaData);
 
         List<Field> fields = new ArrayList<>();
-        ReflectionUtils.getAllFields(fields, clazz);
+        ReflectionUtils.getAllFields(fields, clazz, rushConfig.orderColumnsAlphabetically());
 
         int counter = 4; /* Skip rush_id, rush_created, rush_updated and rush_version */
         for (Field field : fields) {

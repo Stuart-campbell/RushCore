@@ -9,6 +9,7 @@ import java.util.Map;
 import co.uk.rushorm.core.AnnotationCache;
 import co.uk.rushorm.core.Rush;
 import co.uk.rushorm.core.RushColumns;
+import co.uk.rushorm.core.RushConfig;
 import co.uk.rushorm.core.RushListField;
 import co.uk.rushorm.core.RushMetaData;
 import co.uk.rushorm.core.RushSaveStatementGenerator;
@@ -31,9 +32,11 @@ public class ReflectionSaveStatementGenerator implements RushSaveStatementGenera
     }
 
     private final RushSqlInsertGenerator rushSqlInsertGenerator;
+    private final RushConfig rushConfig;
 
-    public ReflectionSaveStatementGenerator(RushSqlInsertGenerator rushSqlInsertGenerator) {
+    public ReflectionSaveStatementGenerator(RushSqlInsertGenerator rushSqlInsertGenerator, RushConfig rushConfig) {
         this.rushSqlInsertGenerator = rushSqlInsertGenerator;
+        this.rushConfig = rushConfig;
     }
 
     @Override
@@ -83,7 +86,7 @@ public class ReflectionSaveStatementGenerator implements RushSaveStatementGenera
         List<String> values = new ArrayList<>();
         List<Field> fields = new ArrayList<>();
 
-        ReflectionUtils.getAllFields(fields, rush.getClass());
+        ReflectionUtils.getAllFields(fields, rush.getClass(), rushConfig.orderColumnsAlphabetically());
 
         for (Field field : fields) {
             if (!annotationCache.get(rush.getClass()).getFieldToIgnore().contains(field.getName())) {

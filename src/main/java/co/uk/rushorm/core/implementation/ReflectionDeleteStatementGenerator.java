@@ -8,6 +8,7 @@ import java.util.Map;
 
 import co.uk.rushorm.core.AnnotationCache;
 import co.uk.rushorm.core.Rush;
+import co.uk.rushorm.core.RushConfig;
 import co.uk.rushorm.core.RushDeleteStatementGenerator;
 import co.uk.rushorm.core.RushListField;
 
@@ -15,6 +16,12 @@ import co.uk.rushorm.core.RushListField;
  * Created by Stuart on 16/02/15.
  */
 public class ReflectionDeleteStatementGenerator implements RushDeleteStatementGenerator {
+
+    private final RushConfig rushConfig;
+
+    public ReflectionDeleteStatementGenerator(RushConfig rushConfig) {
+        this.rushConfig = rushConfig;
+    }
 
     @Override
     public void generateDelete(List<? extends Rush> objects, Map<Class<? extends Rush>, AnnotationCache> annotationCache, RushDeleteStatementGenerator.Callback callback) {
@@ -32,7 +39,7 @@ public class ReflectionDeleteStatementGenerator implements RushDeleteStatementGe
     @Override
     public void generateDeleteAll(Class<? extends Rush> clazz, Map<Class<? extends Rush>, AnnotationCache> annotationCache, Callback deleteCallback) {
         List<Field> fields = new ArrayList<>();
-        ReflectionUtils.getAllFields(fields, clazz);
+        ReflectionUtils.getAllFields(fields, clazz, rushConfig.orderColumnsAlphabetically());
 
         for (Field field : fields) {
             if (!annotationCache.get(clazz).getFieldToIgnore().contains(field.getName())) {
@@ -61,7 +68,7 @@ public class ReflectionDeleteStatementGenerator implements RushDeleteStatementGe
         callback.removeRush(rush);
 
         List<Field> fields = new ArrayList<>();
-        ReflectionUtils.getAllFields(fields, rush.getClass());
+        ReflectionUtils.getAllFields(fields, rush.getClass(), rushConfig.orderColumnsAlphabetically());
 
         for (Field field : fields) {
             field.setAccessible(true);
