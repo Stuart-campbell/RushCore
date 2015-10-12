@@ -96,9 +96,6 @@ public class ReflectionClassLoader implements RushClassLoader {
         }
         T object = clazz.newInstance();
 
-        loadedClasses.get(clazz).put(rushMetaData.getId(), object);
-        callback.didLoadObject(object, rushMetaData);
-
         List<Field> fields = new ArrayList<>();
         ReflectionUtils.getAllFields(fields, clazz, rushConfig.orderColumnsAlphabetically());
 
@@ -117,6 +114,10 @@ public class ReflectionClassLoader implements RushClassLoader {
                 }
             }
         }
+
+        loadedClasses.get(clazz).put(rushMetaData.getId(), object);
+        callback.didLoadObject(object, rushMetaData);
+
         return object;
     }
 
