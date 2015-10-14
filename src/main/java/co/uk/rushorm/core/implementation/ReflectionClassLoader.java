@@ -98,12 +98,12 @@ public class ReflectionClassLoader implements RushClassLoader {
 
         List<Field> fields = new ArrayList<>();
         ReflectionUtils.getAllFields(fields, clazz, rushConfig.orderColumnsAlphabetically());
-
+        
         int counter = 4; /* Skip rush_id, rush_created, rush_updated and rush_version */
         for (Field field : fields) {
             field.setAccessible(true);
             if (!annotationCache.get(clazz).getFieldToIgnore().contains(field.getName())) {
-                if (!loadJoinField(object, rushColumns, annotationCache, field, joins, joinTables)) {
+                if (!loadJoinField(object, rushMetaData.getId(), rushColumns, annotationCache, field, joins, joinTables)) {
                     if(rushColumns.supportsField(field)) {
                         String value = values.get(counter);
                         if(value != null && !value.equals("null")) {
@@ -121,7 +121,7 @@ public class ReflectionClassLoader implements RushClassLoader {
         return object;
     }
 
-    private <T extends Rush> boolean loadJoinField(T object, RushColumns rushColumns, Map<Class<? extends Rush>, AnnotationCache> annotationCache, Field field, Map<Class, List<Join>> joins,  Map<Class, List<String>> joinTables) {
+    private <T extends Rush> boolean loadJoinField(T object, String id, RushColumns rushColumns, Map<Class<? extends Rush>, AnnotationCache> annotationCache, Field field, Map<Class, List<Join>> joins,  Map<Class, List<String>> joinTables) {
         Class clazz = null;
         if (Rush.class.isAssignableFrom(field.getType())) {
             clazz = field.getType();
@@ -134,9 +134,9 @@ public class ReflectionClassLoader implements RushClassLoader {
                 try {
                     Constructor<? extends List> constructor = listType.getConstructor();
                     RushListField rushListField = (RushListField)constructor.newInstance();
-                    rushListField.setDetails(object, field.getName(), annotationCache.get(object.getClass()).getListsClasses().get(field.getName()));
+                    rushListField.setDetails(object, id, field.getName(), annotationCache.get(object.getClass()).getListsClasses().get(field.getName()));
                     field.set(object, rushListField);
-                } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException | InstantiationException e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             } else {

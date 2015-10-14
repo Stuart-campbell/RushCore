@@ -36,7 +36,7 @@ public class RushPageList<T extends Rush> implements RushListField<T>, Iterable<
     }
 
     public RushPageList(Rush parent, String fieldName, Class<T> clazz) {
-        setDetails(parent, fieldName, clazz);
+        setDetails(parent, parent.getId(), fieldName, clazz);
     }
 
     public RushSearch getRushSearch() {
@@ -44,17 +44,18 @@ public class RushPageList<T extends Rush> implements RushListField<T>, Iterable<
     }
 
     @Override
-    public void setDetails(Rush parent, String fieldName, Class<T> clazz) {
+    public void setDetails(Rush parent, String parentId, String fieldName, Class<T> clazz) {
         this.clazz = clazz;
         this.parentClazz = parent.getClass();
-        this.parentId = parent.getId();
+        this.parentId = parentId;
         if(this.parentId == null) {
             parent.save();
+            this.parentId = parent.getId();
         }
-        this.parentId = parent.getId();
+
         this.field = fieldName;
 
-        rushSearch = new RushSearch().whereChildOf(parent, fieldName);
+        rushSearch = new RushSearch().whereChildOf(parent.getClass(), fieldName, this.parentId);
         rushSearch.setLimit(PAGE_SIZE);
         rushSearch.setOffset(0);
     }
