@@ -1,5 +1,7 @@
 package co.uk.rushorm.core;
 
+import java.util.List;
+
 /**
  * Created by stuartc on 11/12/14.
  */
@@ -12,4 +14,5 @@ public interface RushConfig {
     public boolean usingMySql();
     public boolean userBulkInsert();
     public boolean orderColumnsAlphabetically();
+    public List<String> getPackages();
 }

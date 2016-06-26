@@ -297,21 +297,20 @@ public class RushCore {
 
     public void deleteAll(Class<? extends Rush> clazz) {
         final RushQue que = queProvider.blockForNextQue();
-        deleteStatementGenerator.generateDeleteAll(clazz, annotationCache, new RushDeleteStatementGenerator.Callback() {
-            @Override
-            public void removeRush(Rush rush) { }
-            @Override
-            public void deleteStatement(String sql) {
-                logger.logSql(sql);
-                statementRunner.runRaw(sql, que);
-            }
+        deleteAll(clazz, que);
+    }
 
+    public void deleteAll(final Class<? extends Rush> clazz, final RushCallback callback) {
+
+        queProvider.waitForNextQue(new RushQueProvider.RushQueCallback() {
             @Override
-            public RushMetaData getMetaData(Rush rush) {
-                return null;
+            public void callback(RushQue rushQue) {
+                deleteAll(clazz, rushQue);
+                if (callback != null) {
+                    callback.complete();
+                }
             }
         });
-        queProvider.queComplete(que);
     }
 
     public List<RushConflict> saveOnlyWithoutConflict(Rush rush) {
@@ -599,6 +598,24 @@ public class RushCore {
             }
         });
         statementRunner.endTransition(que);
+        queProvider.queComplete(que);
+    }
+
+    private void deleteAll(Class<? extends Rush> clazz, final RushQue que) {
+        deleteStatementGenerator.generateDeleteAll(clazz, annotationCache, new RushDeleteStatementGenerator.Callback() {
+            @Override
+            public void removeRush(Rush rush) { }
+            @Override
+            public void deleteStatement(String sql) {
+                logger.logSql(sql);
+                statementRunner.runRaw(sql, que);
+            }
+
+            @Override
+            public RushMetaData getMetaData(Rush rush) {
+                return null;
+            }
+        });
         queProvider.queComplete(que);
     }
 
