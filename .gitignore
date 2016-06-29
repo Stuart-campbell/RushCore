@@ -1,5 +1,6 @@
 .gradle
 build/
+rushcore.iml
 
 # Ignore Gradle GUI config
 gradle-app.setting
