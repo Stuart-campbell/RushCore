@@ -220,12 +220,4 @@ public abstract class RushInitializeConfig {
         this.rushSqlInsertGenerator = rushSqlInsertGenerator;
     }
 
-    public void setClasses(final List<Class<? extends Rush>> classes) {
-        rushClassFinder = new RushClassFinder() {
-            @Override
-            public List<Class<? extends Rush>> findClasses(RushConfig rushConfig) {
-                return classes;
-            }
-        };
-    }
 }

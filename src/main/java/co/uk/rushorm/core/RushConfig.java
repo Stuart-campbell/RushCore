@@ -1,18 +1,14 @@
 package co.uk.rushorm.core;
 
-import java.util.List;
-
 /**
  * Created by stuartc on 11/12/14.
  */
 public interface RushConfig {
-    public String dbName();
-    public int dbVersion();
-    public boolean inDebug();
-    public boolean log();
-    public boolean requireTableAnnotation();
-    public boolean usingMySql();
-    public boolean userBulkInsert();
-    public boolean orderColumnsAlphabetically();
-    public List<String> getPackages();
+    String dbName();
+    int dbVersion();
+    boolean inDebug();
+    boolean log();
+    boolean usingMySql();
+    boolean userBulkInsert();
+    boolean orderColumnsAlphabetically();
 }

@@ -5,12 +5,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
-import co.uk.rushorm.core.annotations.RushTableAnnotation;
-
 /**
  * Created by Stuart on 19/01/15.
  */
-@RushTableAnnotation
 public class RushTextFile extends RushFile {
 
     public RushTextFile(String directory) {
