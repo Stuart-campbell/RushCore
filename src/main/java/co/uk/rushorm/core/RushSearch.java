@@ -312,7 +312,9 @@ public class RushSearch {
         for (String value : values) {
             inStatement += value + ",";
         }
-        inStatement = inStatement.substring(0, inStatement.length() - 1) + ")";
+        if(!values.isEmpty())
+            inStatement = inStatement.substring(0, inStatement.length() - 1);
+        inStatement += ")";
         whereStatements.add(new RushWhereStatement(column, " IN ", inStatement));
         return this;
     }
